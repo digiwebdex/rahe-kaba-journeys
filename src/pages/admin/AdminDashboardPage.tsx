@@ -5,18 +5,21 @@ import AdminDashboardCharts from "@/components/AdminDashboardCharts";
 export default function AdminDashboardPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
-    const [bk, py] = await Promise.all([
+    const [bk, py, ex] = await Promise.all([
       supabase.from("bookings").select("*, packages(name, type), profiles(full_name)").order("created_at", { ascending: false }),
       supabase.from("payments").select("*, bookings(tracking_id)").order("created_at", { ascending: false }),
+      supabase.from("expenses").select("*").order("date", { ascending: false }),
     ]);
     setBookings(bk.data || []);
     setPayments(py.data || []);
+    setExpenses(ex.data || []);
   };
 
   const markPaymentCompleted = async (paymentId: string) => {
@@ -25,5 +28,5 @@ export default function AdminDashboardPage() {
     fetchData();
   };
 
-  return <AdminDashboardCharts bookings={bookings} payments={payments} onMarkPaid={markPaymentCompleted} />;
+  return <AdminDashboardCharts bookings={bookings} payments={payments} expenses={expenses} onMarkPaid={markPaymentCompleted} />;
 }
