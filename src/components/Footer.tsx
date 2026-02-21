@@ -51,6 +51,7 @@ const Footer = () => {
 
         <div className="mt-12 pt-8 border-t border-border text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} RAHE KABA Tours & Travels. All rights reserved.</p>
+          <p className="mt-2 text-xs text-muted-foreground/70">Design & Developed by <a href="https://digiwebdex.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">DigiWebDex</a></p>
         </div>
       </div>
     </footer>
