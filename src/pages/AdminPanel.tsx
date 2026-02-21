@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  LayoutDashboard, Package, Users, CreditCard, Settings, LogOut, Plus, X, AlertTriangle, FileText,
+  LayoutDashboard, Package, Users, CreditCard, Settings, LogOut, Plus, X, AlertTriangle, FileText, FolderOpen,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import AdminDashboardCharts from "@/components/AdminDashboardCharts";
+import AdminDocumentViewer from "@/components/AdminDocumentViewer";
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -105,6 +106,7 @@ const AdminPanel = () => {
     { key: "packages", label: "Packages", icon: Package },
     { key: "bookings", label: "Bookings", icon: FileText },
     { key: "payments", label: "Payments", icon: CreditCard },
+    { key: "documents", label: "Documents", icon: FolderOpen },
     { key: "plans", label: "Installment Plans", icon: Settings },
   ];
 
@@ -249,6 +251,14 @@ const AdminPanel = () => {
               </table>
             </div>
             {payments.length === 0 && <p className="text-center text-muted-foreground py-12">No payments yet.</p>}
+          </div>
+        )}
+
+        {/* Documents */}
+        {activeTab === "documents" && (
+          <div>
+            <h3 className="font-heading text-lg font-bold mb-4">Customer Documents</h3>
+            <AdminDocumentViewer bookings={bookings} />
           </div>
         )}
 

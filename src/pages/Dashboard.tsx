@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LogOut, Package, CreditCard, AlertTriangle, User } from "lucide-react";
+import { LogOut, Package, CreditCard, AlertTriangle, User, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import logo from "@/assets/logo.jpg";
+import DocumentUpload from "@/components/DocumentUpload";
 
 interface Booking {
   id: string;
@@ -36,6 +37,8 @@ const Dashboard = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [activeTab, setActiveTab] = useState<"bookings" | "payments" | "due">("bookings");
   const [loading, setLoading] = useState(true);
+  const [bookingDocs, setBookingDocs] = useState<Record<string, any[]>>({});
+  const [expandedBooking, setExpandedBooking] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -57,20 +60,29 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!user) return;
-    const fetchData = async () => {
-      setLoading(true);
-      const [profileRes, bookingsRes, paymentsRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
-        supabase.from("bookings").select("*, packages(name, type)").eq("user_id", user.id).order("created_at", { ascending: false }),
-        supabase.from("payments").select("*").eq("user_id", user.id).order("due_date", { ascending: true }),
-      ]);
-      setProfile(profileRes.data);
-      setBookings((bookingsRes.data as any) || []);
-      setPayments((paymentsRes.data as any) || []);
-      setLoading(false);
-    };
+    setLoading(true);
+    const [profileRes, bookingsRes, paymentsRes, docsRes] = await Promise.all([
+      supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase.from("bookings").select("*, packages(name, type)").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("payments").select("*").eq("user_id", user.id).order("due_date", { ascending: true }),
+      supabase.from("booking_documents").select("*").eq("user_id", user.id),
+    ]);
+    setProfile(profileRes.data);
+    setBookings((bookingsRes.data as any) || []);
+    setPayments((paymentsRes.data as any) || []);
+    // Group docs by booking
+    const grouped: Record<string, any[]> = {};
+    (docsRes.data || []).forEach((d: any) => {
+      if (!grouped[d.booking_id]) grouped[d.booking_id] = [];
+      grouped[d.booking_id].push(d);
+    });
+    setBookingDocs(grouped);
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchData();
   }, [user]);
 
@@ -208,6 +220,25 @@ const Dashboard = () => {
                       <p className="font-medium text-destructive">৳{Number(b.due_amount || 0).toLocaleString()}</p>
                     </div>
                   </div>
+                  {/* Document Upload Toggle */}
+                  <button
+                    onClick={() => setExpandedBooking(expandedBooking === b.id ? null : b.id)}
+                    className="mt-4 flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Documents ({(bookingDocs[b.id] || []).length}/3)
+                    {expandedBooking === b.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </button>
+                  {expandedBooking === b.id && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <DocumentUpload
+                        bookingId={b.id}
+                        userId={user.id}
+                        documents={bookingDocs[b.id] || []}
+                        onUploaded={fetchData}
+                      />
+                    </div>
+                  )}
                 </div>
               ))
             )}
