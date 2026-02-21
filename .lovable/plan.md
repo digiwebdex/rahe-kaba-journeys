@@ -1,101 +1,43 @@
 
 
-## PDF Invoice and Payment Receipt Generator
+## Update Booking Tracking Statuses
 
-### Overview
-Create a new utility module that generates professional PDF invoices and payment receipts using `jsPDF` + `jspdf-autotable` (already installed). The PDFs will include the company logo, customer details, package info, payment history, and due amounts. Both admin and customer dashboards will get download buttons.
+### Current State
+The booking tracking system is fully implemented at `/track` with a visual timeline, search by tracking ID, search history, and user bookings display. The current statuses are:
+- Pending -> Visa Processing -> Ticket Confirmed -> Completed
 
-### PDF Documents
+### What Changes
+Add "Confirmed" step and rename "Ticket Confirmed" to "Ticket Issued" so the flow becomes:
+- Pending -> Confirmed -> Visa Processing -> Ticket Issued -> Completed
 
-**1. Invoice** -- Full booking invoice with all details
-- Company header with logo, name ("RAHE KABA"), and contact info (from CMS `contact` section)
-- Invoice number (derived from tracking ID), date
-- Customer details: name, phone, passport, address
-- Package details: name, type, duration, travelers, total amount
-- Payment schedule table: installment #, amount, due date, status, paid date
-- Summary box: Total Amount, Total Paid, Total Due
+### Implementation
 
-**2. Payment Receipt** -- Receipt for a specific completed payment
-- Same company header with logo
-- Receipt number (derived from payment ID)
-- Customer details
-- Payment details: amount, date paid, method, installment #, booking tracking ID
-- Running balance: total paid so far, remaining due
+#### 1. Update `src/pages/TrackBooking.tsx`
+- Add a new step `{ key: "confirmed", label: "Confirmed", icon: CheckCircle2 }` between Pending and Visa Processing
+- Rename `ticket_confirmed` to `ticket_issued` (label: "Ticket Issued")
+- Import an additional icon (e.g., `ShieldCheck`) for Confirmed to differentiate from Completed's `CheckCircle2`
 
-### New File: `src/lib/invoiceGenerator.ts`
+#### 2. Database: Update existing bookings (if any)
+- Rename any bookings with `status = 'ticket_confirmed'` to `ticket_issued`:
+  ```sql
+  UPDATE bookings SET status = 'ticket_issued' WHERE status = 'ticket_confirmed';
+  ```
 
-Two exported functions:
-
-```
-generateInvoice(booking, customer, payments, companyInfo) -> triggers PDF download
-generateReceipt(payment, booking, customer, companyInfo) -> triggers PDF download
-```
-
-**Logo handling**: The logo image (`src/assets/logo.jpg`) will be embedded as a base64 data URL into the PDF using `doc.addImage()`. A helper will convert the imported image to base64 via a canvas element.
-
-**Company info**: Pulled from CMS `contact` section content (company name, phone, email, address) and passed into the generator functions.
-
-### Integration Points
-
-**A. Admin Bookings Page (`AdminBookingsPage.tsx`)**
-- Add "Download Invoice" button per booking card
-- Fetches related payments + profile on click, then calls `generateInvoice`
-
-**B. Admin Payments Page (`AdminPaymentsPage.tsx`)**
-- Add "Receipt" button per completed payment row
-- Calls `generateReceipt` for that payment
-
-**C. Customer Dashboard (`Dashboard.tsx`)**
-- Add "Download Invoice" button in each expanded booking section
-- Add "Receipt" button next to each completed payment in the payment table
-
-**D. Customer Financial Report (`CustomerFinancialReport.tsx`)**
-- Add "Download Invoice" button next to each booking row
-- Add "Download Receipt" for completed payments
-
-### PDF Layout (Invoice)
-
-```text
-+-----------------------------------------------+
-|  [LOGO]  RAHE KABA                             |
-|          Hajj & Umrah Services                 |
-|          Phone: xxx | Email: xxx               |
-+-----------------------------------------------+
-|  INVOICE                                       |
-|  Invoice #: RK-XXXXXXXX   Date: dd MMM yyyy   |
-+-----------------------------------------------+
-|  Bill To:                                      |
-|  Customer Name | Phone | Passport | Address    |
-+-----------------------------------------------+
-|  Package: Umrah Premium | 14 Days | 2 travelers|
-|  Total Amount: ৳1,50,000                       |
-+-----------------------------------------------+
-|  PAYMENT SCHEDULE                              |
-|  # | Amount | Due Date | Status | Paid Date   |
-|  1 | ৳50k   | 01 Jan   | Paid   | 02 Jan     |
-|  2 | ৳50k   | 01 Feb   | Pending| --          |
-|  3 | ৳50k   | 01 Mar   | Pending| --          |
-+-----------------------------------------------+
-|  SUMMARY                                       |
-|  Total: ৳1,50,000  Paid: ৳50,000  Due: ৳1,00k |
-+-----------------------------------------------+
-```
+#### 3. Update all other files referencing the old statuses
+- `src/pages/admin/AdminDueAlertsPage.tsx` -- status color/label helpers
+- `src/pages/admin/AdminBookingsPage.tsx` -- status badge colors
+- `src/pages/admin/AdminDashboardPage.tsx` -- any status references
+- `src/components/admin/AdminSidebar.tsx` -- if status filters exist
 
 ### Files Changed
 
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/lib/invoiceGenerator.ts` | New -- PDF invoice + receipt generation |
-| `src/pages/admin/AdminBookingsPage.tsx` | Add "Download Invoice" button |
-| `src/pages/admin/AdminPaymentsPage.tsx` | Add "Receipt" button for completed payments |
-| `src/pages/Dashboard.tsx` | Add invoice + receipt download buttons |
-| `src/components/admin/CustomerFinancialReport.tsx` | Add invoice + receipt buttons |
+| `src/pages/TrackBooking.tsx` | Add "Confirmed" step, rename "Ticket Confirmed" to "Ticket Issued" |
+| `src/pages/admin/AdminDueAlertsPage.tsx` | Update status helpers for new values |
+| Database (data update) | Rename `ticket_confirmed` to `ticket_issued` in existing rows |
 
 ### Technical Notes
-
-- Uses `jsPDF` and `jspdf-autotable` (already installed, no new dependencies)
-- Logo embedded via `doc.addImage()` with base64-encoded `logo.jpg`
-- Company contact info fetched from `site_content` CMS table (`contact` section) so it stays in sync with admin CMS edits
-- Currency formatted as BDT with `৳` symbol
-- File names follow pattern: `Invoice_RK-XXXXXXXX.pdf` and `Receipt_RK-XXXXXXXX_1.pdf`
-
+- The `bookings.status` column is a plain `text` field (no enum constraint), so adding new status values requires no schema migration
+- The tracking timeline dynamically renders based on `STATUS_STEPS`, so adding one entry is all that's needed for the visual update
+- All status comparisons across the app will be updated to recognize `confirmed` and `ticket_issued`
