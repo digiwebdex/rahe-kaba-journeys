@@ -12,6 +12,7 @@ import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, subMonths
 interface Props {
   bookings: any[];
   payments: any[];
+  expenses?: any[];
   onMarkPaid: (id: string) => void;
 }
 
@@ -174,7 +175,7 @@ const ReconciliationWidget = ({ bookings, payments }: { bookings: any[]; payment
   );
 };
 
-const AdminDashboardCharts = ({ bookings, payments, onMarkPaid }: Props) => {
+const AdminDashboardCharts = ({ bookings, payments, expenses = [], onMarkPaid }: Props) => {
   const [dateFrom, setDateFrom] = useState(() => format(subMonths(new Date(), 11), "yyyy-MM-dd"));
   const [dateTo, setDateTo] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [packageTypeFilter, setPackageTypeFilter] = useState("all");
@@ -204,6 +205,8 @@ const AdminDashboardCharts = ({ bookings, payments, onMarkPaid }: Props) => {
   const totalBookings = filteredBookings.length;
   const totalDue = filteredBookings.reduce((s, b) => s + Number(b.due_amount || 0), 0);
   const overduePayments = filteredPayments.filter((p) => p.status === "pending" && p.due_date && new Date(p.due_date) < new Date());
+  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  const netProfit = totalRevenue - totalExpenses;
 
   // Monthly booking chart data
   const monthlyBookings = useMemo(() => {
@@ -234,6 +237,20 @@ const AdminDashboardCharts = ({ bookings, payments, onMarkPaid }: Props) => {
       }
     });
     return Object.entries(months).map(([month, data]) => ({ month, ...data }));
+  }, [filteredPayments]);
+
+  // Monthly revenue chart (completed payments only)
+  const monthlyRevenue = useMemo(() => {
+    const months: Record<string, number> = {};
+    for (let i = 11; i >= 0; i--) {
+      const m = startOfMonth(subMonths(new Date(), i));
+      months[format(m, "MMM yyyy")] = 0;
+    }
+    filteredPayments.filter(p => p.status === "completed").forEach((p) => {
+      const key = format(new Date(p.paid_at || p.created_at), "MMM yyyy");
+      if (months[key] !== undefined) months[key] += Number(p.amount);
+    });
+    return Object.entries(months).map(([month, revenue]) => ({ month, revenue }));
   }, [filteredPayments]);
 
   // Package type breakdown
@@ -309,21 +326,23 @@ const AdminDashboardCharts = ({ bookings, payments, onMarkPaid }: Props) => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: "Total Revenue", value: `৳${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-primary", bgColor: "bg-primary/10" },
           { label: "Total Bookings", value: totalBookings, icon: Package, color: "text-foreground", bgColor: "bg-secondary" },
-          { label: "Total Due", value: `৳${totalDue.toLocaleString()}`, icon: TrendingUp, color: "text-destructive", bgColor: "bg-destructive/10" },
+          { label: "Total Revenue", value: `৳${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "text-primary", bgColor: "bg-primary/10" },
+          { label: "Total Expenses", value: `৳${totalExpenses.toLocaleString()}`, icon: TrendingUp, color: "text-destructive", bgColor: "bg-destructive/10" },
+          { label: "Net Profit", value: `৳${netProfit.toLocaleString()}`, icon: DollarSign, color: netProfit >= 0 ? "text-emerald" : "text-destructive", bgColor: netProfit >= 0 ? "bg-emerald/10" : "bg-destructive/10" },
+          { label: "Total Due", value: `৳${totalDue.toLocaleString()}`, icon: AlertTriangle, color: "text-primary", bgColor: "bg-primary/10" },
           { label: "Overdue Alerts", value: overduePayments.length, icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10" },
         ].map((c) => (
-          <div key={c.label} className="bg-card border border-border rounded-xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">{c.label}</p>
-              <div className={`w-9 h-9 rounded-lg ${c.bgColor} flex items-center justify-center`}>
-                <c.icon className={`h-4 w-4 ${c.color}`} />
+          <div key={c.label} className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-muted-foreground">{c.label}</p>
+              <div className={`w-8 h-8 rounded-lg ${c.bgColor} flex items-center justify-center`}>
+                <c.icon className={`h-3.5 w-3.5 ${c.color}`} />
               </div>
             </div>
-            <p className={`text-2xl font-heading font-bold ${c.color}`}>{c.value}</p>
+            <p className={`text-xl font-heading font-bold ${c.color}`}>{c.value}</p>
           </div>
         ))}
       </div>
@@ -369,6 +388,24 @@ const AdminDashboardCharts = ({ bookings, payments, onMarkPaid }: Props) => {
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS.emerald }} /> Collected</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS.gold }} /> Pending</span>
           </div>
+        </div>
+      </div>
+
+      {/* Revenue Chart */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <h4 className="font-heading font-semibold mb-4 flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-primary" /> Monthly Revenue
+        </h4>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={monthlyRevenue}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 20%)" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: CHART_COLORS.muted }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: CHART_COLORS.muted }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={customTooltipStyle} formatter={(val: number) => `৳${val.toLocaleString()}`} />
+              <Line type="monotone" dataKey="revenue" stroke={CHART_COLORS.emerald} strokeWidth={2} dot={{ fill: CHART_COLORS.emerald, r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
