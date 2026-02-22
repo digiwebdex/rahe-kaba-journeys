@@ -1,26 +1,27 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Phone, User } from "lucide-react";
+import { Menu, X, Phone, User, Globe } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/logo.jpg";
 import { useSiteContent } from "@/hooks/useSiteContent";
-
-const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Packages", href: "/packages" },
-  { label: "Hotels", href: "/hotels" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-  { label: "Track", href: "/track" },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const { data: content } = useSiteContent("navbar");
+  const { language, setLanguage, t } = useLanguage();
 
   const phone = content?.phone || "+880 1601-505050";
-  const ctaText = content?.cta_text || "Book Now";
+
+  const navLinks = [
+    { label: t("nav.home"), href: "/" },
+    { label: t("nav.packages"), href: "/packages" },
+    { label: t("nav.hotels"), href: "/hotels" },
+    { label: t("nav.about"), href: "/about" },
+    { label: t("nav.contact"), href: "/contact" },
+    { label: t("nav.track"), href: "/track" },
+  ];
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
@@ -29,6 +30,8 @@ const Navbar = () => {
     supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user || null));
     return () => subscription.unsubscribe();
   }, []);
+
+  const toggleLang = () => setLanguage(language === "en" ? "bn" : "en");
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
@@ -53,7 +56,17 @@ const Navbar = () => {
           ))}
         </div>
 
-        <div className="hidden lg:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-3">
+          {/* Language Toggle */}
+          <button
+            onClick={toggleLang}
+            className="flex items-center gap-1.5 text-sm font-medium border border-border px-3 py-2 rounded-md hover:bg-secondary transition-colors"
+            title={language === "en" ? "বাংলায় দেখুন" : "View in English"}
+          >
+            <Globe className="h-4 w-4" />
+            {language === "en" ? "বাংলা" : "EN"}
+          </button>
+
           <a href={`tel:${phone.replace(/[\s-]/g, "")}`} className="flex items-center gap-2 text-sm text-primary">
             <Phone className="h-4 w-4" />
             {phone}
@@ -61,20 +74,34 @@ const Navbar = () => {
           {user ? (
             <a href="/dashboard" className="flex items-center gap-2 text-sm text-primary border border-primary/40 px-4 py-2.5 rounded-md hover:bg-primary/10 transition-colors">
               <User className="h-4 w-4" />
-              Dashboard
+              {t("nav.dashboard")}
             </a>
           ) : (
             <a href="/auth" className="flex items-center gap-2 text-sm text-primary border border-primary/40 px-4 py-2.5 rounded-md hover:bg-primary/10 transition-colors">
               <User className="h-4 w-4" />
-              Sign In
+              {t("nav.signIn")}
             </a>
           )}
           <a
             href="/packages"
             className="bg-gradient-gold text-primary-foreground font-semibold px-6 py-2.5 rounded-md text-sm hover:opacity-90 transition-opacity"
           >
-            {ctaText}
+            {t("nav.bookNow")}
           </a>
+        </div>
+
+        {/* Mobile: lang toggle + hamburger */}
+        <div className="lg:hidden flex items-center gap-2">
+          <button
+            onClick={toggleLang}
+            className="flex items-center gap-1 text-xs font-medium border border-border px-2 py-1.5 rounded-md"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            {language === "en" ? "বাং" : "EN"}
+          </button>
+          <button onClick={() => setOpen(!open)} className="text-foreground p-2">
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
       </div>
 
@@ -102,7 +129,7 @@ const Navbar = () => {
                 onClick={() => setOpen(false)}
                 className="bg-gradient-gold text-primary-foreground font-semibold px-6 py-3 rounded-md text-sm text-center"
               >
-                {ctaText}
+                {t("nav.bookNow")}
               </a>
             </div>
           </motion.div>

@@ -1,19 +1,29 @@
 import { Phone, Mail, MapPin } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { useSiteContent } from "@/hooks/useSiteContent";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Footer = () => {
   const { data: content } = useSiteContent("footer");
+  const { t } = useLanguage();
 
   const companyName = content?.company_name || "RAHE KABA";
   const tagline = content?.company_tagline || "Tours & Travels";
-  const description = content?.description || "Your trusted partner for Hajj & Umrah from Chittagong, Bangladesh. Making sacred journeys seamless since 2010.";
+  const description = content?.description || t("about.description").slice(0, 120) + "...";
   const phone = content?.phone || "+880 1601-505050";
   const email = content?.email || "rahekaba.info@gmail.com";
   const address = content?.address || "Chittagong, Bangladesh";
   const servicesList = content?.services_list || ["Hajj Packages", "Umrah Packages", "Visa Processing", "Air Tickets", "Hotel Booking", "Ziyara Tours"];
   const devName = content?.developer_name || "DigiWebDex";
   const devUrl = content?.developer_url || "https://digiwebdex.com";
+
+  const quickLinks = [
+    { label: t("nav.home"), href: "#home" },
+    { label: t("services.headingHighlight"), href: "#services" },
+    { label: t("nav.packages"), href: "#packages" },
+    { label: t("nav.about"), href: "#about" },
+    { label: t("nav.contact"), href: "#contact" },
+  ];
 
   return (
     <footer className="bg-background border-t border-border py-16">
@@ -31,18 +41,18 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-heading font-semibold mb-4 text-primary">Quick Links</h4>
+            <h4 className="font-heading font-semibold mb-4 text-primary">{t("footer.quickLinks")}</h4>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
-              {["Home", "Services", "Packages", "About", "Contact"].map((l) => (
-                <li key={l}>
-                  <a href={`#${l.toLowerCase()}`} className="hover:text-primary transition-colors">{l}</a>
+              {quickLinks.map((l) => (
+                <li key={l.href}>
+                  <a href={l.href} className="hover:text-primary transition-colors">{l.label}</a>
                 </li>
               ))}
             </ul>
           </div>
 
           <div>
-            <h4 className="font-heading font-semibold mb-4 text-primary">Services</h4>
+            <h4 className="font-heading font-semibold mb-4 text-primary">{t("footer.services")}</h4>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
               {servicesList.map((s: string) => (
                 <li key={s}><span>{s}</span></li>
@@ -51,7 +61,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-heading font-semibold mb-4 text-primary">Contact</h4>
+            <h4 className="font-heading font-semibold mb-4 text-primary">{t("footer.contact")}</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> {phone}</li>
               <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /> {email}</li>
@@ -61,8 +71,8 @@ const Footer = () => {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} {companyName} {tagline}. All rights reserved.</p>
-          <p className="mt-2 text-xs text-muted-foreground/70">Design & Developed by <a href={devUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">{devName}</a></p>
+          <p>© {new Date().getFullYear()} {companyName} {tagline}. {t("footer.allRights")}</p>
+          <p className="mt-2 text-xs text-muted-foreground/70">{t("footer.designBy")} <a href={devUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">{devName}</a></p>
         </div>
       </div>
     </footer>

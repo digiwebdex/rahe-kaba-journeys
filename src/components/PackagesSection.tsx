@@ -2,68 +2,56 @@ import { motion } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-kaaba.jpg";
 import medinaImage from "@/assets/medina-mosque.jpg";
-
-const packages = [
-  {
-    name: "Umrah Economy",
-    price: "৳85,000",
-    duration: "10 Days",
-    image: medinaImage,
-    popular: false,
-    features: ["Return Air Ticket", "3-Star Hotel", "Visa Processing", "Ground Transport", "Ziyara Tour", "Meal Included"],
-  },
-  {
-    name: "Umrah Premium",
-    price: "৳1,50,000",
-    duration: "14 Days",
-    image: heroImage,
-    popular: true,
-    features: ["Return Air Ticket", "5-Star Hotel Near Haram", "Visa Processing", "VIP Transport", "Full Ziyara", "All Meals", "Personal Guide", "Laundry Service"],
-  },
-  {
-    name: "Hajj Package",
-    price: "৳6,50,000",
-    duration: "40 Days",
-    image: medinaImage,
-    popular: false,
-    features: ["Return Air Ticket", "Premium Accommodation", "Visa Processing", "Full Transport", "Complete Ziyara", "All Meals", "Experienced Guide", "Training Sessions"],
-  },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const PackagesSection = () => {
+  const { t } = useLanguage();
+
+  const packages = [
+    {
+      name: "Umrah Economy",
+      price: "৳85,000",
+      duration: "10 Days",
+      image: medinaImage,
+      popular: false,
+      features: ["Return Air Ticket", "3-Star Hotel", "Visa Processing", "Ground Transport", "Ziyara Tour", "Meal Included"],
+    },
+    {
+      name: "Umrah Premium",
+      price: "৳1,50,000",
+      duration: "14 Days",
+      image: heroImage,
+      popular: true,
+      features: ["Return Air Ticket", "5-Star Hotel Near Haram", "Visa Processing", "VIP Transport", "Full Ziyara", "All Meals", "Personal Guide", "Laundry Service"],
+    },
+    {
+      name: "Hajj Package",
+      price: "৳6,50,000",
+      duration: "40 Days",
+      image: medinaImage,
+      popular: false,
+      features: ["Return Air Ticket", "Premium Accommodation", "Visa Processing", "Full Transport", "Complete Ziyara", "All Meals", "Experienced Guide", "Training Sessions"],
+    },
+  ];
+
   return (
     <section id="packages" className="py-24 bg-card">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <span className="text-primary text-sm font-medium tracking-[0.3em] uppercase">Our Packages</span>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
+          <span className="text-primary text-sm font-medium tracking-[0.3em] uppercase">{t("packages.label")}</span>
           <h2 className="font-heading text-3xl md:text-5xl font-bold mt-3 mb-4">
-            Choose Your <span className="text-gradient-gold">Journey</span>
+            {t("packages.heading")} <span className="text-gradient-gold">{t("packages.headingHighlight")}</span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Flexible packages designed for every budget — installment payment available
-          </p>
+          <p className="text-muted-foreground max-w-xl mx-auto">{t("packages.description")}</p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {packages.map((pkg, i) => (
-            <motion.div
-              key={pkg.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
-              className={`relative rounded-xl overflow-hidden border ${
-                pkg.popular ? "border-primary shadow-gold scale-[1.03]" : "border-border"
-              } bg-background flex flex-col`}
-            >
+            <motion.div key={pkg.name} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}
+              className={`relative rounded-xl overflow-hidden border ${pkg.popular ? "border-primary shadow-gold scale-[1.03]" : "border-border"} bg-background flex flex-col`}>
               {pkg.popular && (
                 <div className="absolute top-4 right-4 z-10 bg-gradient-gold text-primary-foreground text-xs font-bold px-3 py-1 rounded-full">
-                  Most Popular
+                  {t("packages.mostPopular")}
                 </div>
               )}
               <div className="h-48 overflow-hidden">
@@ -75,25 +63,17 @@ const PackagesSection = () => {
                 <p className="text-sm text-muted-foreground mb-4">{pkg.duration}</p>
                 <p className="text-3xl font-heading font-bold text-primary mb-6">
                   {pkg.price}
-                  <span className="text-sm font-body text-muted-foreground font-normal"> / person</span>
+                  <span className="text-sm font-body text-muted-foreground font-normal"> {t("packages.perPerson")}</span>
                 </p>
                 <ul className="space-y-2.5 mb-6 flex-1">
                   {pkg.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm text-foreground/80">
-                      <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                      {f}
+                      <Check className="h-4 w-4 text-primary flex-shrink-0" />{f}
                     </li>
                   ))}
                 </ul>
-                <a
-                  href="#contact"
-                  className={`w-full py-3 rounded-md text-sm font-semibold text-center inline-flex items-center justify-center gap-2 transition-all ${
-                    pkg.popular
-                      ? "bg-gradient-gold text-primary-foreground hover:opacity-90"
-                      : "border border-primary/40 text-foreground hover:bg-primary/10"
-                  }`}
-                >
-                  Book Now <ArrowRight className="h-4 w-4" />
+                <a href="#contact" className={`w-full py-3 rounded-md text-sm font-semibold text-center inline-flex items-center justify-center gap-2 transition-all ${pkg.popular ? "bg-gradient-gold text-primary-foreground hover:opacity-90" : "border border-primary/40 text-foreground hover:bg-primary/10"}`}>
+                  {t("packages.bookNow")} <ArrowRight className="h-4 w-4" />
                 </a>
               </div>
             </motion.div>
