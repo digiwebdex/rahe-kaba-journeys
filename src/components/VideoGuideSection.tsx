@@ -78,10 +78,17 @@ export default function VideoGuideSection() {
               transition={{ delay: i * 0.1 }}
               className="group bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 hover:shadow-gold transition-all"
             >
-              <div className={`relative h-44 bg-gradient-to-br ${video.color} flex items-center justify-center`}>
-                <div className="absolute inset-0 bg-background/20" />
-                <div className="relative z-10 w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center shadow-gold group-hover:scale-110 transition-transform">
-                  <Play className="h-7 w-7 text-primary-foreground ml-1" />
+              <div className="relative h-44 overflow-hidden">
+                <img
+                  src={`https://img.youtube.com/vi/${video.embedId}/hqdefault.jpg`}
+                  alt={bn ? video.titleBn : video.titleEn}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center shadow-gold group-hover:scale-110 transition-transform">
+                    <Play className="h-6 w-6 text-primary-foreground ml-1" />
+                  </div>
                 </div>
               </div>
               <div className="p-4">
