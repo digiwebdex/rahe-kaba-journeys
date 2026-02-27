@@ -1,13 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, X, ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { Play, X, ChevronLeft, ChevronRight, Image as ImageIcon, Video } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 type GalleryItem = {
   type: "image" | "video";
   src: string;
-  thumbSrc?: string;
 };
+
+type TabType = "all" | "images" | "videos";
 
 const items: GalleryItem[] = [
   { type: "image", src: "/gallery/image-1.jpeg" },
@@ -20,20 +21,33 @@ const items: GalleryItem[] = [
   { type: "image", src: "/gallery/image-6.jpeg" },
 ];
 
+const tabs: { key: TabType; labelBn: string; labelEn: string; icon: typeof ImageIcon }[] = [
+  { key: "all", labelBn: "সব", labelEn: "All", icon: ImageIcon },
+  { key: "images", labelBn: "ছবি", labelEn: "Photos", icon: ImageIcon },
+  { key: "videos", labelBn: "ভিডিও", labelEn: "Videos", icon: Video },
+];
+
 export default function GallerySection() {
   const { language } = useLanguage();
   const bn = language === "bn";
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>("all");
+
+  const filtered = useMemo(() => {
+    if (activeTab === "all") return items;
+    if (activeTab === "images") return items.filter((i) => i.type === "image");
+    return items.filter((i) => i.type === "video");
+  }, [activeTab]);
 
   const open = useCallback((i: number) => setActiveIndex(i), []);
   const close = useCallback(() => setActiveIndex(null), []);
   const prev = useCallback(
-    () => setActiveIndex((c) => (c !== null && c > 0 ? c - 1 : items.length - 1)),
-    []
+    () => setActiveIndex((c) => (c !== null && c > 0 ? c - 1 : filtered.length - 1)),
+    [filtered.length]
   );
   const next = useCallback(
-    () => setActiveIndex((c) => (c !== null && c < items.length - 1 ? c + 1 : 0)),
-    []
+    () => setActiveIndex((c) => (c !== null && c < filtered.length - 1 ? c + 1 : 0)),
+    [filtered.length]
   );
 
   return (
@@ -60,48 +74,69 @@ export default function GallerySection() {
           </p>
         </motion.div>
 
+        {/* Tabs */}
+        <div className="flex justify-center gap-2 mb-10">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => { setActiveTab(tab.key); setActiveIndex(null); }}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all border ${
+                activeTab === tab.key
+                  ? "bg-primary text-primary-foreground border-primary shadow-gold"
+                  : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {bn ? tab.labelBn : tab.labelEn}
+            </button>
+          ))}
+        </div>
+
         {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 max-w-6xl mx-auto">
-          {items.map((item, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.06 }}
-              className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer border border-border hover:border-primary/40 hover:shadow-gold transition-all"
-              onClick={() => open(i)}
-            >
-              {item.type === "image" ? (
-                <img
-                  src={item.src}
-                  alt={`Gallery ${i + 1}`}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  loading="lazy"
-                />
-              ) : (
-                <video
-                  src={item.src}
-                  muted
-                  playsInline
-                  preload="metadata"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              )}
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                {item.type === "video" ? (
-                  <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-gold opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all">
-                    <Play className="h-5 w-5 text-primary-foreground ml-0.5" />
-                  </div>
+          <AnimatePresence mode="popLayout">
+            {filtered.map((item, i) => (
+              <motion.div
+                key={item.src}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer border border-border hover:border-primary/40 hover:shadow-gold transition-all"
+                onClick={() => open(i)}
+              >
+                {item.type === "image" ? (
+                  <img
+                    src={item.src}
+                    alt={`Gallery ${i + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                  />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ImageIcon className="h-4 w-4 text-primary-foreground" />
-                  </div>
+                  <video
+                    src={item.src}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
                 )}
-              </div>
-            </motion.div>
-          ))}
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                  {item.type === "video" ? (
+                    <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-gold opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all">
+                      <Play className="h-5 w-5 text-primary-foreground ml-0.5" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ImageIcon className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -149,15 +184,15 @@ export default function GallerySection() {
               className="relative max-w-4xl w-full max-h-[85vh] rounded-xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {items[activeIndex].type === "image" ? (
+              {filtered[activeIndex].type === "image" ? (
                 <img
-                  src={items[activeIndex].src}
+                  src={filtered[activeIndex].src}
                   alt={`Gallery ${activeIndex + 1}`}
                   className="w-full h-full object-contain max-h-[85vh]"
                 />
               ) : (
                 <video
-                  src={items[activeIndex].src}
+                  src={filtered[activeIndex].src}
                   controls
                   autoPlay
                   playsInline
@@ -168,7 +203,7 @@ export default function GallerySection() {
 
             {/* Counter */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm font-medium">
-              {activeIndex + 1} / {items.length}
+              {activeIndex + 1} / {filtered.length}
             </div>
           </motion.div>
         )}
