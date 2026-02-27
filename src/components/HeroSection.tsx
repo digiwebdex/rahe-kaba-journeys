@@ -93,7 +93,7 @@ const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="text-xl sm:text-2xl md:text-3xl font-semibold italic text-gradient-gold leading-relaxed"
           >
-            "আর তোমরা আল্লাহর সন্তুষ্টির জন্য হজ্জ ও ওমরাহ পূর্ণ কর।"
+            "আর তোমরা আল্লাহর সন্তুষ্টির জন্য হজ্জ ও ওমরাহ পূর্ণ কর"
           </motion.p>
 
           {/* Surah reference */}
