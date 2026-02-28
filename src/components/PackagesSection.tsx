@@ -1,11 +1,13 @@
 import { motion } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-kaaba.jpg";
 import medinaImage from "@/assets/medina-mosque.jpg";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const PackagesSection = () => {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const bn = language === "bn";
 
   const packages = [
@@ -82,10 +84,7 @@ const PackagesSection = () => {
                   ))}
                 </ul>
                 <button
-                  onClick={() => {
-                    const el = document.getElementById("contact");
-                    if (el) el.scrollIntoView({ behavior: "smooth" });
-                  }}
+                  onClick={() => navigate("/packages")}
                   className={`w-full py-3 rounded-md text-sm font-semibold text-center inline-flex items-center justify-center gap-2 transition-all cursor-pointer ${pkg.popular ? "bg-gradient-gold text-primary-foreground hover:opacity-90" : "border border-primary/40 text-foreground hover:bg-primary/10"}`}
                 >
                   {t("packages.bookNow")} <ArrowRight className="h-4 w-4" />
