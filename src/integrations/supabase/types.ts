@@ -125,6 +125,13 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "booking_documents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_booking_profit"
+            referencedColumns: ["booking_id"]
+          },
         ]
       }
       bookings: {
@@ -202,6 +209,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "packages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "v_package_profit"
+            referencedColumns: ["package_id"]
           },
         ]
       }
@@ -281,11 +295,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "expenses_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_booking_profit"
+            referencedColumns: ["booking_id"]
+          },
+          {
             foreignKeyName: "expenses_package_id_fkey"
             columns: ["package_id"]
             isOneToOne: false
             referencedRelation: "packages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "v_package_profit"
+            referencedColumns: ["package_id"]
           },
         ]
       }
@@ -550,6 +578,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notification_logs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_booking_profit"
+            referencedColumns: ["booking_id"]
+          },
+          {
             foreignKeyName: "notification_logs_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
@@ -687,6 +722,13 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_booking_profit"
+            referencedColumns: ["booking_id"]
+          },
         ]
       }
       profiles: {
@@ -797,6 +839,13 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_booking_profit"
+            referencedColumns: ["booking_id"]
+          },
         ]
       }
       user_roles: {
@@ -819,7 +868,64 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_booking_profit: {
+        Row: {
+          booking_id: string | null
+          due_amount: number | null
+          guest_name: string | null
+          package_id: string | null
+          package_name: string | null
+          package_type: string | null
+          paid_amount: number | null
+          profit: number | null
+          status: string | null
+          total_amount: number | null
+          total_expenses: number | null
+          total_payments: number | null
+          tracking_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "v_package_profit"
+            referencedColumns: ["package_id"]
+          },
+        ]
+      }
+      v_customer_profit: {
+        Row: {
+          customer_id: string | null
+          full_name: string | null
+          phone: string | null
+          profit: number | null
+          total_bookings: number | null
+          total_expenses: number | null
+          total_payments: number | null
+        }
+        Relationships: []
+      }
+      v_package_profit: {
+        Row: {
+          package_id: string | null
+          package_name: string | null
+          package_price: number | null
+          package_type: string | null
+          profit: number | null
+          total_bookings: number | null
+          total_expenses: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_installment_schedule: {
