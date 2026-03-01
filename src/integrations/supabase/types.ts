@@ -635,6 +635,7 @@ export type Database = {
           created_at: string
           description: string | null
           duration_days: number | null
+          expiry_date: string | null
           features: Json | null
           id: string
           image_url: string | null
@@ -650,6 +651,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_days?: number | null
+          expiry_date?: string | null
           features?: Json | null
           id?: string
           image_url?: string | null
@@ -665,6 +667,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_days?: number | null
+          expiry_date?: string | null
           features?: Json | null
           id?: string
           image_url?: string | null
@@ -963,6 +966,7 @@ export type Database = {
       }
     }
     Functions: {
+      deactivate_expired_packages: { Args: never; Returns: undefined }
       generate_installment_schedule: {
         Args: {
           p_booking_id: string
