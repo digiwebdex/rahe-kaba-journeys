@@ -17,6 +17,8 @@ interface Props {
   expenses?: any[];
   accounts?: any[];
   financialSummary?: any;
+  moallemPayments?: any[];
+  supplierPayments?: any[];
   onMarkPaid: (id: string) => void;
 }
 
@@ -121,7 +123,7 @@ const ReconciliationWidget = ({ bookings, payments }: { bookings: any[]; payment
   );
 };
 
-const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = [], financialSummary, onMarkPaid }: Props) => {
+const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = [], financialSummary, moallemPayments = [], supplierPayments = [], onMarkPaid }: Props) => {
   const [dateFrom, setDateFrom] = useState(() => format(subMonths(new Date(), 11), "yyyy-MM-dd"));
   const [dateTo, setDateTo] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [packageTypeFilter, setPackageTypeFilter] = useState("all");
@@ -148,6 +150,12 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
   const bankBalance = walletAccounts.find((a: any) => a.name === "Bank")?.balance || 0;
   const bkashBalance = walletAccounts.find((a: any) => a.name === "bKash")?.balance || 0;
   const nagadBalance = walletAccounts.find((a: any) => a.name === "Nagad")?.balance || 0;
+
+  // Moallem & Supplier totals
+  const totalMoallemAdvance = moallemPayments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+  const totalSupplierPaid = supplierPayments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+  const totalSupplierCost = filteredBookings.reduce((s: number, b: any) => s + Number(b.total_cost || 0), 0);
+  const totalSupplierDue = Math.max(0, totalSupplierCost - totalSupplierPaid);
 
   // Monthly profit chart (revenue - expenses per month)
   const monthlyProfitData = useMemo(() => {
@@ -195,26 +203,28 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
 
   // Package profit
   const packageProfitData = useMemo(() => {
-    const map: Record<string, { name: string; revenue: number; expenses: number; bookings: number; travelers: number }> = {};
+    const map: Record<string, { name: string; revenue: number; supplierCost: number; expenses: number; bookings: number; travelers: number }> = {};
     filteredBookings.forEach((b: any) => {
       const pkgName = b.packages?.name || "Unknown";
-      if (!map[pkgName]) map[pkgName] = { name: pkgName, revenue: 0, expenses: 0, bookings: 0, travelers: 0 };
+      if (!map[pkgName]) map[pkgName] = { name: pkgName, revenue: 0, supplierCost: 0, expenses: 0, bookings: 0, travelers: 0 };
       map[pkgName].revenue += Number(b.paid_amount);
+      map[pkgName].supplierCost += Number(b.total_cost || 0);
       map[pkgName].bookings += 1;
       map[pkgName].travelers += Number(b.num_travelers);
       map[pkgName].expenses += expenses.filter((e: any) => e.booking_id === b.id).reduce((s: number, e: any) => s + Number(e.amount), 0);
     });
-    return Object.values(map).map((p) => ({ ...p, profit: p.revenue - p.expenses, margin: p.revenue > 0 ? Math.round(((p.revenue - p.expenses) / p.revenue) * 100) : 0 })).sort((a, b) => b.profit - a.profit);
+    return Object.values(map).map((p) => ({ ...p, totalCost: p.supplierCost + p.expenses, profit: p.revenue - p.supplierCost - p.expenses, margin: p.revenue > 0 ? Math.round(((p.revenue - p.supplierCost - p.expenses) / p.revenue) * 100) : 0 })).sort((a, b) => b.profit - a.profit);
   }, [filteredBookings, expenses]);
 
   // Hajji report
   const hajjiReport = useMemo(() => filteredBookings.map((b: any) => {
     const expenseTotal = expenses.filter((e: any) => e.booking_id === b.id).reduce((s: number, e: any) => s + Number(e.amount), 0);
+    const supplierCost = Number(b.total_cost || 0);
     return {
-      trackingId: b.tracking_id, name: b.profiles?.full_name || "N/A", package: b.packages?.name || "N/A",
+      trackingId: b.tracking_id, name: b.guest_name || "N/A", package: b.packages?.name || "N/A",
       type: b.packages?.type || "N/A", travelers: b.num_travelers, total: Number(b.total_amount),
-      paid: Number(b.paid_amount), due: Number(b.due_amount || 0), expenses: expenseTotal,
-      profit: Number(b.paid_amount) - expenseTotal, status: b.status, date: b.created_at,
+      paid: Number(b.paid_amount), due: Number(b.due_amount || 0), supplierCost, expenses: expenseTotal,
+      profit: Number(b.paid_amount) - supplierCost - expenseTotal, status: b.status, date: b.created_at,
     };
   }), [filteredBookings, expenses]);
 
@@ -285,6 +295,22 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
           { label: "Nagad", value: `৳${Number(nagadBalance).toLocaleString()}`, icon: Wallet, color: "text-primary", bgColor: "bg-primary/10" },
           { label: "Bank", value: `৳${Number(bankBalance).toLocaleString()}`, icon: Landmark, color: "text-primary", bgColor: "bg-primary/10" },
           { label: "Pending Due", value: `৳${totalDue.toLocaleString()}`, icon: Receipt, color: "text-yellow-600", bgColor: "bg-yellow-500/10" },
+        ].map((c) => (
+          <div key={c.label} className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-muted-foreground">{c.label}</p>
+              <div className={`w-8 h-8 rounded-lg ${c.bgColor} flex items-center justify-center`}><c.icon className={`h-3.5 w-3.5 ${c.color}`} /></div>
+            </div>
+            <p className={`text-xl font-heading font-bold ${c.color}`}>{c.value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {[
+          { label: "Moallem Advance", value: `৳${totalMoallemAdvance.toLocaleString()}`, icon: Users, color: "text-primary", bgColor: "bg-primary/10" },
+          { label: "Supplier Cost", value: `৳${totalSupplierCost.toLocaleString()}`, icon: TrendingDown, color: "text-destructive", bgColor: "bg-destructive/10" },
+          { label: "Supplier Paid", value: `৳${totalSupplierPaid.toLocaleString()}`, icon: CheckCircle2, color: "text-emerald", bgColor: "bg-emerald/10" },
+          { label: "Supplier Due", value: `৳${totalSupplierDue.toLocaleString()}`, icon: AlertTriangle, color: "text-yellow-600", bgColor: "bg-yellow-500/10" },
         ].map((c) => (
           <div key={c.label} className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
@@ -469,7 +495,7 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-border text-left text-muted-foreground">
                   <th className="pb-3 pr-3">Package</th><th className="pb-3 pr-3">Bookings</th><th className="pb-3 pr-3">Travelers</th>
-                  <th className="pb-3 pr-3">Revenue</th><th className="pb-3 pr-3">Expenses</th><th className="pb-3 pr-3">Profit</th><th className="pb-3">Margin</th>
+                  <th className="pb-3 pr-3">Revenue</th><th className="pb-3 pr-3">Supplier Cost</th><th className="pb-3 pr-3">Expenses</th><th className="pb-3 pr-3">Profit</th><th className="pb-3">Margin</th>
                 </tr></thead>
                 <tbody>
                   {packageProfitData.map((p) => (
@@ -478,6 +504,7 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
                       <td className="py-2.5 pr-3 text-center">{p.bookings}</td>
                       <td className="py-2.5 pr-3 text-center">{p.travelers}</td>
                       <td className="py-2.5 pr-3" style={{ color: CHART_COLORS.emerald }}>৳{p.revenue.toLocaleString()}</td>
+                      <td className="py-2.5 pr-3 text-muted-foreground">৳{p.supplierCost.toLocaleString()}</td>
                       <td className="py-2.5 pr-3 text-destructive">৳{p.expenses.toLocaleString()}</td>
                       <td className={`py-2.5 pr-3 font-bold ${p.profit >= 0 ? "text-primary" : "text-destructive"}`}>৳{p.profit.toLocaleString()}</td>
                       <td className="py-2.5"><span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.margin >= 0 ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>{p.margin}%</span></td>
@@ -499,7 +526,7 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
               <thead><tr className="border-b border-border text-left text-muted-foreground">
                 <th className="pb-3 pr-3">Tracking</th><th className="pb-3 pr-3">Name</th><th className="pb-3 pr-3">Package</th>
                 <th className="pb-3 pr-3">Travelers</th><th className="pb-3 pr-3">Total</th><th className="pb-3 pr-3">Paid</th>
-                <th className="pb-3 pr-3">Due</th><th className="pb-3 pr-3">Expenses</th><th className="pb-3 pr-3">Profit</th>
+                <th className="pb-3 pr-3">Due</th><th className="pb-3 pr-3">Supplier</th><th className="pb-3 pr-3">Expenses</th><th className="pb-3 pr-3">Profit</th>
                 <th className="pb-3 pr-3">Status</th><th className="pb-3">Date</th>
               </tr></thead>
               <tbody>
@@ -512,6 +539,7 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
                     <td className="py-2.5 pr-3 font-medium">৳{r.total.toLocaleString()}</td>
                     <td className="py-2.5 pr-3" style={{ color: CHART_COLORS.emerald }}>৳{r.paid.toLocaleString()}</td>
                     <td className="py-2.5 pr-3 text-destructive font-medium">৳{r.due.toLocaleString()}</td>
+                    <td className="py-2.5 pr-3 text-muted-foreground">৳{r.supplierCost.toLocaleString()}</td>
                     <td className="py-2.5 pr-3 text-muted-foreground">৳{r.expenses.toLocaleString()}</td>
                     <td className={`py-2.5 pr-3 font-bold ${r.profit >= 0 ? "text-primary" : "text-destructive"}`}>৳{r.profit.toLocaleString()}</td>
                     <td className="py-2.5 pr-3">
@@ -528,6 +556,7 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
                   <td className="py-3 pr-3">৳{hajjiReport.reduce((s, r) => s + r.total, 0).toLocaleString()}</td>
                   <td className="py-3 pr-3" style={{ color: CHART_COLORS.emerald }}>৳{hajjiReport.reduce((s, r) => s + r.paid, 0).toLocaleString()}</td>
                   <td className="py-3 pr-3 text-destructive">৳{hajjiReport.reduce((s, r) => s + r.due, 0).toLocaleString()}</td>
+                  <td className="py-3 pr-3 text-muted-foreground">৳{hajjiReport.reduce((s, r) => s + r.supplierCost, 0).toLocaleString()}</td>
                   <td className="py-3 pr-3 text-muted-foreground">৳{hajjiReport.reduce((s, r) => s + r.expenses, 0).toLocaleString()}</td>
                   <td className="py-3 pr-3 text-primary">৳{hajjiReport.reduce((s, r) => s + r.profit, 0).toLocaleString()}</td>
                   <td colSpan={2}></td>

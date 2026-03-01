@@ -8,22 +8,28 @@ export default function AdminDashboardPage() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [financialSummary, setFinancialSummary] = useState<any>(null);
+  const [moallemPayments, setMoallemPayments] = useState<any[]>([]);
+  const [supplierPayments, setSupplierPayments] = useState<any[]>([]);
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
-    const [bk, py, ex, ac, fs] = await Promise.all([
+    const [bk, py, ex, ac, fs, mp, sp] = await Promise.all([
       supabase.from("bookings").select("*, packages(name, type)").order("created_at", { ascending: false }),
       supabase.from("payments").select("*, bookings(tracking_id)").order("created_at", { ascending: false }),
       supabase.from("expenses").select("*").order("date", { ascending: false }),
       supabase.from("accounts").select("*"),
       supabase.from("financial_summary").select("*").limit(1).single(),
+      supabase.from("moallem_payments").select("*, moallems(name)").order("created_at", { ascending: false }),
+      supabase.from("supplier_agent_payments").select("*, supplier_agents(agent_name)").order("created_at", { ascending: false }),
     ]);
     setBookings(bk.data || []);
     setPayments(py.data || []);
     setExpenses(ex.data || []);
     setAccounts((ac.data as any[]) || []);
     setFinancialSummary(fs.data || null);
+    setMoallemPayments(mp.data || []);
+    setSupplierPayments(sp.data || []);
   };
 
   const markPaymentCompleted = async (paymentId: string) => {
@@ -32,5 +38,16 @@ export default function AdminDashboardPage() {
     fetchData();
   };
 
-  return <AdminDashboardCharts bookings={bookings} payments={payments} expenses={expenses} accounts={accounts} financialSummary={financialSummary} onMarkPaid={markPaymentCompleted} />;
+  return (
+    <AdminDashboardCharts
+      bookings={bookings}
+      payments={payments}
+      expenses={expenses}
+      accounts={accounts}
+      financialSummary={financialSummary}
+      moallemPayments={moallemPayments}
+      supplierPayments={supplierPayments}
+      onMarkPaid={markPaymentCompleted}
+    />
+  );
 }
