@@ -139,6 +139,7 @@ export type Database = {
           cost_price_per_person: number | null
           created_at: string
           due_amount: number | null
+          extra_expense: number | null
           guest_address: string | null
           guest_email: string | null
           guest_name: string | null
@@ -151,6 +152,8 @@ export type Database = {
           num_travelers: number
           package_id: string
           paid_amount: number
+          profit_amount: number | null
+          selling_price_per_person: number | null
           status: string
           supplier_agent_id: string | null
           total_amount: number
@@ -163,6 +166,7 @@ export type Database = {
           cost_price_per_person?: number | null
           created_at?: string
           due_amount?: number | null
+          extra_expense?: number | null
           guest_address?: string | null
           guest_email?: string | null
           guest_name?: string | null
@@ -175,6 +179,8 @@ export type Database = {
           num_travelers?: number
           package_id: string
           paid_amount?: number
+          profit_amount?: number | null
+          selling_price_per_person?: number | null
           status?: string
           supplier_agent_id?: string | null
           total_amount: number
@@ -187,6 +193,7 @@ export type Database = {
           cost_price_per_person?: number | null
           created_at?: string
           due_amount?: number | null
+          extra_expense?: number | null
           guest_address?: string | null
           guest_email?: string | null
           guest_name?: string | null
@@ -199,6 +206,8 @@ export type Database = {
           num_travelers?: number
           package_id?: string
           paid_amount?: number
+          profit_amount?: number | null
+          selling_price_per_person?: number | null
           status?: string
           supplier_agent_id?: string | null
           total_amount?: number
@@ -1118,13 +1127,17 @@ export type Database = {
       v_booking_profit: {
         Row: {
           booking_id: string | null
+          cost_price_per_person: number | null
           due_amount: number | null
+          extra_expense: number | null
           guest_name: string | null
+          num_travelers: number | null
           package_id: string | null
           package_name: string | null
           package_type: string | null
           paid_amount: number | null
-          profit: number | null
+          profit_amount: number | null
+          selling_price_per_person: number | null
           status: string | null
           total_amount: number | null
           total_cost: number | null
