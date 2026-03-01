@@ -29,7 +29,10 @@ export default function AdminPaymentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Add payment modal
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("action") === "add";
+  });
   const [customers, setCustomers] = useState<any[]>([]);
   const [customerBookings, setCustomerBookings] = useState<any[]>([]);
   const [addForm, setAddForm] = useState({

@@ -56,7 +56,10 @@ export default function AdminAccountingPage() {
   const canModify = useCanModifyFinancials();
   const [tab, setTab] = useState("expenses");
   const [expenses, setExpenses] = useState<any[]>([]);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("action") === "add";
+  });
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});

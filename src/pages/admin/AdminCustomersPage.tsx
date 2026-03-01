@@ -34,7 +34,10 @@ export default function AdminCustomersPage() {
   const [expandLoading, setExpandLoading] = useState(false);
 
   // Add customer modal
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("action") === "add";
+  });
   const [addForm, setAddForm] = useState<any>({ ...emptyForm });
   const [addLoading, setAddLoading] = useState(false);
 

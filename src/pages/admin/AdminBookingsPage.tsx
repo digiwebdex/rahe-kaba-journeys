@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Download, Edit2, Trash2, Save, X, Search, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Plus } from "lucide-react";
@@ -131,6 +131,7 @@ function BookingDetail({ bookingId }: { bookingId: string }) {
 
 export default function AdminBookingsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isViewer = useIsViewer();
   const [bookings, setBookings] = useState<any[]>([]);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
@@ -146,6 +147,11 @@ export default function AdminBookingsPage() {
       .then(({ data }) => setBookings(data || []));
 
   useEffect(() => { fetchBookings(); }, []);
+
+  // Auto-navigate to create page from quick action
+  useEffect(() => {
+    if (searchParams.get("action") === "create") navigate("/admin/bookings/create", { replace: true });
+  }, [searchParams]);
 
   const startEdit = (b: any) => {
     setEditingId(b.id);

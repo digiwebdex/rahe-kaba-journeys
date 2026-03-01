@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, X, Edit2, Trash2, Save, ToggleLeft, ToggleRight, Upload, Loader2 } from "lucide-react";
@@ -16,7 +16,10 @@ const EMPTY_FORM = {
 export default function AdminPackagesPage() {
   const isViewer = useIsViewer();
   const [packages, setPackages] = useState<any[]>([]);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("action") === "add";
+  });
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);

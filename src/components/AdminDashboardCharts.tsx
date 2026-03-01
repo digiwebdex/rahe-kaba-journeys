@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend,
@@ -6,6 +7,7 @@ import {
 import {
   TrendingUp, TrendingDown, DollarSign, Package, AlertTriangle, Calendar, Filter, Users,
   CheckCircle2, XCircle, Clock, RefreshCw, ShieldCheck, Wallet, Landmark, Receipt,
+  FileText, CreditCard, Calculator,
 } from "lucide-react";
 import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, subMonths } from "date-fns";
 
@@ -215,8 +217,29 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
     };
   }), [filteredBookings, expenses]);
 
+  const navigate = useNavigate();
+
+  const quickActions = [
+    { label: "নতুন বুকিং", icon: FileText, path: "/admin/bookings?action=create", color: "bg-primary/10 text-primary hover:bg-primary/20" },
+    { label: "নতুন কাস্টমার", icon: Users, path: "/admin/customers?action=add", color: "bg-emerald/10 text-emerald hover:bg-emerald/20" },
+    { label: "নতুন পেমেন্ট", icon: CreditCard, path: "/admin/payments?action=add", color: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20" },
+    { label: "নতুন খরচ", icon: Calculator, path: "/admin/accounting?action=add", color: "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20" },
+    { label: "নতুন প্যাকেজ", icon: Package, path: "/admin/packages?action=add", color: "bg-purple-500/10 text-purple-500 hover:bg-purple-500/20" },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {quickActions.map((a) => (
+          <button key={a.label} onClick={() => navigate(a.path)}
+            className={`flex items-center gap-2 rounded-xl border border-border p-3.5 text-sm font-medium transition-colors ${a.color}`}>
+            <a.icon className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{a.label}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Filters */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3"><Filter className="h-4 w-4 text-primary" /><span className="text-sm font-semibold">Filters</span></div>
