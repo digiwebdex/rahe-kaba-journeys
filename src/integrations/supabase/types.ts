@@ -1127,6 +1127,7 @@ export type Database = {
           profit: number | null
           status: string | null
           total_amount: number | null
+          total_cost: number | null
           total_expenses: number | null
           total_payments: number | null
           tracking_id: string | null
