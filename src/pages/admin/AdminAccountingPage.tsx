@@ -1,32 +1,45 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, X, Edit2, Trash2, Save, Filter, TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
+import { Plus, X, Edit2, Trash2, Save, Filter, TrendingUp, TrendingDown, BarChart3, Search } from "lucide-react";
 import { useIsViewer, useCanModifyFinancials } from "@/components/admin/AdminLayout";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const inputClass = "w-full bg-secondary border border-border rounded-md px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40";
 
 const EXPENSE_TYPES = [
-  { value: "visa", label: "Visa Cost" },
-  { value: "ticket", label: "Ticket Cost" },
-  { value: "hotel", label: "Hotel Cost" },
-  { value: "transport", label: "Transport Cost" },
-  { value: "food", label: "Food Cost" },
-  { value: "guide", label: "Guide Cost" },
-  { value: "office", label: "Office Expense" },
-  { value: "other", label: "Other" },
+  { value: "visa", label: "ভিসা খরচ" },
+  { value: "ticket", label: "টিকেট খরচ" },
+  { value: "hotel", label: "হোটেল খরচ" },
+  { value: "transport", label: "পরিবহন খরচ" },
+  { value: "food", label: "খাবার খরচ" },
+  { value: "guide", label: "গাইড খরচ" },
+  { value: "office", label: "অফিস খরচ" },
+  { value: "marketing", label: "মার্কেটিং খরচ" },
+  { value: "salary", label: "বেতন" },
+  { value: "other", label: "অন্যান্য" },
 ];
 
 const ASSIGN_TO = [
-  { value: "booking", label: "Booking" },
-  { value: "customer", label: "Customer" },
-  { value: "package", label: "Package" },
-  { value: "general", label: "General Business" },
+  { value: "booking", label: "বুকিং" },
+  { value: "customer", label: "কাস্টমার" },
+  { value: "package", label: "প্যাকেজ" },
+  { value: "general", label: "সাধারণ অফিস" },
+];
+
+const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "bkash", label: "bKash" },
+  { value: "nagad", label: "Nagad" },
+  { value: "bank", label: "Bank Transfer" },
+  { value: "manual", label: "Manual" },
 ];
 
 const EMPTY_FORM = {
   title: "", amount: "", expense_type: "visa", category: "general",
-  note: "", date: "", booking_id: "", customer_id: "", package_id: "", wallet_account_id: "",
+  note: "", date: new Date().toISOString().split("T")[0],
+  booking_id: "", customer_id: "", package_id: "",
+  wallet_account_id: "", payment_method: "cash",
 };
 
 const TABS = [
@@ -93,9 +106,11 @@ export default function AdminAccountingPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.title.trim()) { toast.error("শিরোনাম আবশ্যক"); return; }
+    if (!form.amount || parseFloat(form.amount) <= 0) { toast.error("সঠিক পরিমাণ দিন"); return; }
     const payload: any = {
-      title: form.title, amount: parseFloat(form.amount), expense_type: form.expense_type,
-      category: form.category, note: form.note || null, date: form.date || undefined,
+      title: form.title.trim(), amount: parseFloat(form.amount), expense_type: form.expense_type,
+      category: form.category, note: form.note.trim() || null, date: form.date || undefined,
       booking_id: form.category === "booking" && form.booking_id ? form.booking_id : null,
       customer_id: form.category === "customer" && form.customer_id ? form.customer_id : null,
       package_id: form.category === "package" && form.package_id ? form.package_id : null,
@@ -103,11 +118,11 @@ export default function AdminAccountingPage() {
     };
     const { error } = await supabase.from("expenses").insert(payload);
     if (error) {
-      if (error.message?.includes("Insufficient wallet balance")) toast.error("Insufficient wallet balance for this expense");
+      if (error.message?.includes("Insufficient wallet balance")) toast.error("ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই");
       else toast.error(error.message);
       return;
     }
-    toast.success("Expense recorded");
+    toast.success("খরচ রেকর্ড হয়েছে");
     setShowForm(false); setForm({ ...EMPTY_FORM });
     fetchData(); fetchProfitViews();
   };
@@ -195,11 +210,10 @@ export default function AdminAccountingPage() {
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-        <h2 className="font-heading text-xl font-bold">Accounting & Profit Engine</h2>
+        <h2 className="font-heading text-xl font-bold">হিসাব ও মুনাফা</h2>
         {canModify && tab === "expenses" && (
-          <button onClick={() => setShowForm(!showForm)} className="bg-gradient-gold text-primary-foreground text-sm font-semibold px-4 py-2 rounded-md flex items-center gap-2">
-            {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {showForm ? "Cancel" : "Add Expense"}
+          <button onClick={() => setShowForm(true)} className="inline-flex items-center gap-1.5 text-sm bg-gradient-gold text-primary-foreground font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity shadow-gold">
+            <Plus className="h-4 w-4" /> নতুন খরচ
           </button>
         )}
       </div>
@@ -207,15 +221,15 @@ export default function AdminAccountingPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">Total Revenue</p>
+          <p className="text-sm text-muted-foreground">মোট আয়</p>
           <p className="text-2xl font-heading font-bold text-primary">{fmt(revenue)}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">Total Expenses</p>
+          <p className="text-sm text-muted-foreground">মোট খরচ</p>
           <p className="text-2xl font-heading font-bold text-destructive">{fmt(totalExpenses)}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">Net Profit</p>
+          <p className="text-sm text-muted-foreground">নীট মুনাফা</p>
           <p className={`text-2xl font-heading font-bold ${netProfit >= 0 ? "text-emerald" : "text-destructive"}`}>{fmt(netProfit)}</p>
         </div>
       </div>
@@ -234,7 +248,7 @@ export default function AdminAccountingPage() {
       {tab === "expenses" && (
         <>
           {/* Type Breakdown */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
             {EXPENSE_TYPES.map(({ value, label }) => (
               <div key={value} className="bg-card border border-border rounded-lg p-3 text-center">
                 <p className="text-xs text-muted-foreground">{label}</p>
@@ -243,39 +257,18 @@ export default function AdminAccountingPage() {
             ))}
           </div>
 
-          {showForm && (
-            <form onSubmit={handleCreate} className="bg-card border border-border rounded-xl p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input className={inputClass} placeholder="Expense Title" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-              <input className={inputClass} placeholder="Amount (BDT)" type="number" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-              <select className={inputClass} value={form.expense_type} onChange={(e) => setForm({ ...form, expense_type: e.target.value })}>
-                {EXPENSE_TYPES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
-              </select>
-              <input className={inputClass} type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-              <select className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value, booking_id: "", customer_id: "", package_id: "" })}>
-                {ASSIGN_TO.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
-              </select>
-              <AssignmentFields data={form} setData={setForm} />
-              <select className={inputClass} value={form.wallet_account_id} onChange={(e) => setForm({ ...form, wallet_account_id: e.target.value })}>
-                <option value="">Pay from Wallet (optional)</option>
-                {walletAccounts.map((w) => <option key={w.id} value={w.id}>{w.name} — {fmt(w.balance)}</option>)}
-              </select>
-              <input className={inputClass} placeholder="Note (optional)" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
-              <button type="submit" className="bg-gradient-gold text-primary-foreground font-semibold py-2.5 rounded-md text-sm sm:col-span-2">Record Expense</button>
-            </form>
-          )}
-
           {/* Filters */}
           <div className="flex flex-wrap gap-3 mb-4 items-center">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <select className={inputClass + " w-auto"} value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-              <option value="all">All Types</option>
+              <option value="all">সকল ধরন</option>
               {EXPENSE_TYPES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
             </select>
             <select className={inputClass + " w-auto"} value={filterAssign} onChange={(e) => setFilterAssign(e.target.value)}>
-              <option value="all">All Assignments</option>
+              <option value="all">সকল অ্যাসাইনমেন্ট</option>
               {ASSIGN_TO.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
             </select>
-            <span className="text-xs text-muted-foreground ml-auto">{filtered.length} expense{filtered.length !== 1 ? "s" : ""}</span>
+            <span className="text-xs text-muted-foreground ml-auto">{filtered.length} টি খরচ</span>
           </div>
 
           {/* Expense List */}
@@ -322,7 +315,7 @@ export default function AdminAccountingPage() {
                 )}
               </div>
             ))}
-            {filtered.length === 0 && <p className="text-center text-muted-foreground py-12">No expenses found.</p>}
+            {filtered.length === 0 && <p className="text-center text-muted-foreground py-12">কোনো খরচ পাওয়া যায়নি।</p>}
           </div>
         </>
       )}
@@ -445,15 +438,89 @@ export default function AdminAccountingPage() {
         </div>
       )}
 
+      {/* Add Expense Modal */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading">নতুন খরচ যোগ করুন</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="text-xs text-muted-foreground block mb-1">শিরোনাম *</label>
+                <input className={inputClass} placeholder="খরচের শিরোনাম" required value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={200} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">পরিমাণ (৳) *</label>
+                <input className={inputClass} placeholder="0" type="number" step="0.01" min="1" required value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">খরচের ধরন *</label>
+                <select className={inputClass} value={form.expense_type} onChange={(e) => setForm({ ...form, expense_type: e.target.value })}>
+                  {EXPENSE_TYPES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">পেমেন্ট পদ্ধতি</label>
+                <select className={inputClass} value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })}>
+                  {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">তারিখ *</label>
+                <input className={inputClass} type="date" required value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">অ্যাসাইন করুন</label>
+                <select className={inputClass} value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value, booking_id: "", customer_id: "", package_id: "" })}>
+                  {ASSIGN_TO.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+              <div>
+                <AssignmentFields data={form} setData={setForm} />
+              </div>
+            </div>
+
+            {walletAccounts.length > 0 && (
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">ওয়ালেট অ্যাকাউন্ট</label>
+                <select className={inputClass} value={form.wallet_account_id} onChange={(e) => setForm({ ...form, wallet_account_id: e.target.value })}>
+                  <option value="">-- ঐচ্ছিক --</option>
+                  {walletAccounts.map((w) => <option key={w.id} value={w.id}>{w.name} — {fmt(w.balance)}</option>)}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">নোট</label>
+              <textarea className={inputClass + " resize-none"} rows={2} value={form.note}
+                onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="অতিরিক্ত তথ্য..." maxLength={500} />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setShowForm(false)} className="text-sm px-4 py-2 rounded-md bg-secondary">বাতিল</button>
+              <button type="submit"
+                className="text-sm px-4 py-2 rounded-md bg-gradient-gold text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-gold flex items-center gap-2">
+                <Save className="h-4 w-4" /> খরচ রেকর্ড করুন
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Modal */}
       {deleteId && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setDeleteId(null)}>
           <div className="bg-card border border-border rounded-xl p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-heading font-bold text-lg mb-2">Delete Expense?</h3>
-            <p className="text-sm text-muted-foreground mb-4">This action cannot be undone.</p>
+            <h3 className="font-heading font-bold text-lg mb-2">খরচ মুছবেন?</h3>
+            <p className="text-sm text-muted-foreground mb-4">এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setDeleteId(null)} className="text-sm px-4 py-2 rounded-md bg-secondary">Cancel</button>
-              <button onClick={confirmDelete} className="text-sm px-4 py-2 rounded-md bg-destructive text-destructive-foreground">Delete</button>
+              <button onClick={() => setDeleteId(null)} className="text-sm px-4 py-2 rounded-md bg-secondary">বাতিল</button>
+              <button onClick={confirmDelete} className="text-sm px-4 py-2 rounded-md bg-destructive text-destructive-foreground">মুছুন</button>
             </div>
           </div>
         </div>
