@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Edit2, Trash2, Save, X, Search, ChevronDown, ChevronUp, TrendingUp, TrendingDown } from "lucide-react";
+import { Download, Edit2, Trash2, Save, X, Search, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { generateInvoice, CompanyInfo, InvoicePayment } from "@/lib/invoiceGenerator";
 import { useIsViewer } from "@/components/admin/AdminLayout";
 import { Badge } from "@/components/ui/badge";
@@ -129,6 +130,7 @@ function BookingDetail({ bookingId }: { bookingId: string }) {
 }
 
 export default function AdminBookingsPage() {
+  const navigate = useNavigate();
   const isViewer = useIsViewer();
   const [bookings, setBookings] = useState<any[]>([]);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
@@ -196,9 +198,17 @@ export default function AdminBookingsPage() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h2 className="font-heading text-xl font-bold">All Bookings</h2>
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input className={inputClass + " pl-9"} placeholder="Search bookings..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {!isViewer && (
+            <button onClick={() => navigate("/admin/bookings/create")}
+              className="inline-flex items-center gap-1.5 text-sm bg-gradient-gold text-primary-foreground font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity shadow-gold">
+              <Plus className="h-4 w-4" /> নতুন বুকিং
+            </button>
+          )}
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input className={inputClass + " pl-9"} placeholder="Search bookings..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
         </div>
       </div>
 

@@ -32,6 +32,7 @@ import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminNotificationsPage from "./pages/admin/AdminNotificationsPage";
 import AdminChartOfAccountsPage from "./pages/admin/AdminChartOfAccountsPage";
 import AdminReceivablesPage from "./pages/admin/AdminReceivablesPage";
+import AdminCreateBookingPage from "./pages/admin/AdminCreateBookingPage";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="bookings" element={<AdminBookingsPage />} />
+            <Route path="bookings/create" element={<AdminCreateBookingPage />} />
             <Route path="customers" element={<AdminCustomersPage />} />
             <Route path="packages" element={<AdminPackagesPage />} />
             <Route path="hotels" element={<AdminHotelsPage />} />

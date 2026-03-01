@@ -1,0 +1,298 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { ArrowLeft, Save, User, Phone, Mail, MapPin, CreditCard, FileText } from "lucide-react";
+
+const inputClass =
+  "w-full bg-secondary border border-border rounded-md px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+const STATUSES = ["pending", "confirmed", "visa_processing", "ticket_issued", "completed", "cancelled"];
+
+export default function AdminCreateBookingPage() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [packages, setPackages] = useState<any[]>([]);
+
+  const [form, setForm] = useState({
+    guest_name: "",
+    guest_phone: "",
+    guest_email: "",
+    guest_address: "",
+    guest_passport: "",
+    package_id: "",
+    num_travelers: 1,
+    travel_date: "",
+    total_amount: 0,
+    paid_amount: 0,
+    status: "pending",
+    notes: "",
+  });
+
+  const dueAmount = Math.max(0, form.total_amount - form.paid_amount);
+
+  useEffect(() => {
+    supabase
+      .from("packages")
+      .select("id, name, type, price, duration_days")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data }) => setPackages(data || []));
+  }, []);
+
+  const handlePackageChange = (packageId: string) => {
+    const pkg = packages.find((p) => p.id === packageId);
+    setForm((prev) => ({
+      ...prev,
+      package_id: packageId,
+      total_amount: pkg ? Number(pkg.price) * prev.num_travelers : prev.total_amount,
+    }));
+  };
+
+  const handleTravelersChange = (num: number) => {
+    const pkg = packages.find((p) => p.id === form.package_id);
+    setForm((prev) => ({
+      ...prev,
+      num_travelers: num,
+      total_amount: pkg ? Number(pkg.price) * num : prev.total_amount,
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.guest_name.trim()) { toast.error("Customer name is required"); return; }
+    if (!form.guest_phone.trim()) { toast.error("Phone number is required"); return; }
+    if (!form.package_id) { toast.error("Please select a package"); return; }
+    if (form.total_amount <= 0) { toast.error("Total amount must be greater than 0"); return; }
+    if (form.paid_amount < 0) { toast.error("Paid amount cannot be negative"); return; }
+    if (form.paid_amount > form.total_amount) { toast.error("Paid amount cannot exceed total"); return; }
+
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("Not authenticated"); return; }
+
+      // 1. Find or create customer profile
+      let customerId: string | null = null;
+      const cleanPhone = form.guest_phone.trim().replace(/[^\d+]/g, "");
+
+      // Search existing profiles by phone
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("phone", cleanPhone)
+        .maybeSingle();
+
+      if (existingProfile) {
+        customerId = existingProfile.user_id;
+      }
+
+      // 2. Create booking
+      const { data: booking, error } = await supabase.from("bookings").insert({
+        guest_name: form.guest_name.trim(),
+        guest_phone: cleanPhone,
+        guest_email: form.guest_email.trim() || null,
+        guest_address: form.guest_address.trim() || null,
+        guest_passport: form.guest_passport.trim() || null,
+        package_id: form.package_id,
+        num_travelers: form.num_travelers,
+        total_amount: form.total_amount,
+        paid_amount: form.paid_amount,
+        due_amount: dueAmount,
+        status: form.status,
+        notes: form.notes.trim() || null,
+        user_id: customerId,
+      }).select("id, tracking_id").single();
+
+      if (error) throw error;
+
+      // 3. If paid_amount > 0, create an initial payment record
+      if (form.paid_amount > 0 && booking) {
+        await supabase.from("payments").insert({
+          booking_id: booking.id,
+          user_id: customerId || session.user.id,
+          customer_id: customerId,
+          amount: form.paid_amount,
+          status: "completed",
+          payment_method: "manual",
+          installment_number: 1,
+          paid_at: new Date().toISOString(),
+          notes: "Initial payment (admin booking)",
+        });
+      }
+
+      toast.success(`Booking created! Tracking ID: ${booking?.tracking_id}`);
+      navigate("/admin/bookings");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create booking");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedPkg = packages.find((p) => p.id === form.package_id);
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+        <button onClick={() => navigate("/admin/bookings")} className="text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h2 className="font-heading text-xl font-bold">নতুন বুকিং তৈরি করুন</h2>
+      </div>
+
+      {/* Customer Information */}
+      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+        <h3 className="font-heading font-semibold text-sm flex items-center gap-2">
+          <User className="h-4 w-4 text-primary" /> কাস্টমার তথ্য
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">কাস্টমারের নাম *</label>
+            <input className={inputClass} value={form.guest_name} onChange={(e) => setForm({ ...form, guest_name: e.target.value })}
+              placeholder="পূর্ণ নাম" maxLength={100} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">ফোন নম্বর *</label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <input className={`${inputClass} pl-9`} value={form.guest_phone} onChange={(e) => setForm({ ...form, guest_phone: e.target.value })}
+                placeholder="+8801XXXXXXXXX" maxLength={15} />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">ইমেইল</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <input className={`${inputClass} pl-9`} type="email" value={form.guest_email} onChange={(e) => setForm({ ...form, guest_email: e.target.value })}
+                placeholder="email@example.com" maxLength={255} />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">পাসপোর্ট নম্বর</label>
+            <input className={inputClass} value={form.guest_passport} onChange={(e) => setForm({ ...form, guest_passport: e.target.value })}
+              placeholder="পাসপোর্ট নম্বর" maxLength={20} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs text-muted-foreground block mb-1">ঠিকানা</label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <input className={`${inputClass} pl-9`} value={form.guest_address} onChange={(e) => setForm({ ...form, guest_address: e.target.value })}
+                placeholder="পূর্ণ ঠিকানা" maxLength={300} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Package & Travel */}
+      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+        <h3 className="font-heading font-semibold text-sm flex items-center gap-2">
+          <FileText className="h-4 w-4 text-primary" /> প্যাকেজ ও ভ্রমণ তথ্য
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <label className="text-xs text-muted-foreground block mb-1">প্যাকেজ নির্বাচন *</label>
+            <select className={inputClass} value={form.package_id} onChange={(e) => handlePackageChange(e.target.value)}>
+              <option value="">-- প্যাকেজ বাছাই করুন --</option>
+              {packages.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.type}) — ৳{Number(p.price).toLocaleString()} {p.duration_days ? `• ${p.duration_days} দিন` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">যাত্রী সংখ্যা *</label>
+            <input className={inputClass} type="number" min={1} max={100} value={form.num_travelers}
+              onChange={(e) => handleTravelersChange(Math.max(1, parseInt(e.target.value) || 1))} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">ভ্রমণের তারিখ</label>
+            <input className={inputClass} type="date" value={form.travel_date}
+              onChange={(e) => setForm({ ...form, travel_date: e.target.value })} />
+          </div>
+        </div>
+        {selectedPkg && (
+          <div className="bg-secondary/50 rounded-lg p-3 text-xs text-muted-foreground">
+            প্যাকেজ মূল্য: ৳{Number(selectedPkg.price).toLocaleString()} × {form.num_travelers} জন = <span className="font-bold text-foreground">৳{(Number(selectedPkg.price) * form.num_travelers).toLocaleString()}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Payment & Status */}
+      <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+        <h3 className="font-heading font-semibold text-sm flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-primary" /> পেমেন্ট ও স্ট্যাটাস
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">মোট মূল্য (৳) *</label>
+            <input className={inputClass} type="number" min={0} value={form.total_amount}
+              onChange={(e) => setForm({ ...form, total_amount: Math.max(0, parseFloat(e.target.value) || 0) })} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">পরিশোধিত (৳)</label>
+            <input className={inputClass} type="number" min={0} value={form.paid_amount}
+              onChange={(e) => setForm({ ...form, paid_amount: Math.max(0, parseFloat(e.target.value) || 0) })} />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">বকেয়া (৳)</label>
+            <div className={`${inputClass} bg-muted/50 font-bold text-destructive`}>
+              ৳{dueAmount.toLocaleString()}
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">বুকিং স্ট্যাটাস</label>
+            <select className={inputClass} value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace("_", " ")}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">নোট</label>
+            <input className={inputClass} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              placeholder="অতিরিক্ত তথ্য..." maxLength={500} />
+          </div>
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
+        <h3 className="font-heading font-semibold text-sm mb-3">সারসংক্ষেপ</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground">কাস্টমার</p>
+            <p className="font-medium">{form.guest_name || "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">প্যাকেজ</p>
+            <p className="font-medium">{selectedPkg?.name || "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">মোট</p>
+            <p className="font-medium">৳{form.total_amount.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">বকেয়া</p>
+            <p className="font-medium text-destructive">৳{dueAmount.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Submit */}
+      <div className="flex justify-end gap-3">
+        <button onClick={() => navigate("/admin/bookings")}
+          className="px-5 py-2.5 text-sm rounded-md bg-secondary text-foreground hover:bg-muted transition-colors">
+          বাতিল
+        </button>
+        <button onClick={handleSubmit} disabled={loading}
+          className="px-5 py-2.5 text-sm rounded-md bg-gradient-gold text-primary-foreground font-semibold hover:opacity-90 transition-opacity shadow-gold disabled:opacity-50 flex items-center gap-2">
+          <Save className="h-4 w-4" />
+          {loading ? "তৈরি হচ্ছে..." : "বুকিং তৈরি করুন"}
+        </button>
+      </div>
+    </div>
+  );
+}
