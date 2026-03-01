@@ -34,9 +34,11 @@ export default function AdminMoallemProfilePage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [moallemPayments, setMoallemPayments] = useState<any[]>([]);
+  const [commissionPayments, setCommissionPayments] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showCommissionForm, setShowCommissionForm] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   const emptyPaymentForm = {
@@ -49,6 +51,16 @@ export default function AdminMoallemProfilePage() {
   };
   const [paymentForm, setPaymentForm] = useState(emptyPaymentForm);
 
+  const emptyCommissionForm = {
+    amount: "",
+    payment_method: "cash",
+    date: new Date().toISOString().split("T")[0],
+    notes: "",
+    wallet_account_id: "",
+    booking_id: "",
+  };
+  const [commissionForm, setCommissionForm] = useState(emptyCommissionForm);
+
   const loadData = async () => {
     if (!id) return;
     setLoading(true);
@@ -60,9 +72,13 @@ export default function AdminMoallemProfilePage() {
       supabase.from("accounts").select("id, name, type, balance").order("name"),
     ]);
 
+    // Commission payments - table may not be in generated types yet
+    const cpRes = await (supabase as any).from("moallem_commission_payments").select("*").eq("moallem_id", id).order("created_at", { ascending: false });
+
     setMoallem(mRes.data);
     setBookings(bRes.data || []);
     setMoallemPayments(mpRes.data || []);
+    setCommissionPayments(cpRes.data || []);
     setAccounts(accRes.data || []);
 
     const bookingIds = (bRes.data || []).map((b: any) => b.id);
@@ -146,6 +162,39 @@ export default function AdminMoallemProfilePage() {
     }
   };
 
+  // === Record Commission Payment ===
+  const handleRecordCommission = async () => {
+    const amount = parseFloat(commissionForm.amount);
+    if (!amount || amount <= 0) { toast({ title: "সঠিক পরিমাণ দিন", variant: "destructive" }); return; }
+
+    setPaymentLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast({ title: "Not authenticated", variant: "destructive" }); return; }
+
+      const { error } = await (supabase as any).from("moallem_commission_payments").insert({
+        moallem_id: id,
+        amount,
+        payment_method: commissionForm.payment_method,
+        date: commissionForm.date,
+        notes: commissionForm.notes.trim() || null,
+        wallet_account_id: commissionForm.wallet_account_id || null,
+        booking_id: commissionForm.booking_id || null,
+        recorded_by: session.user.id,
+      });
+      if (error) throw error;
+
+      toast({ title: "কমিশন পরিশোধ রেকর্ড হয়েছে", description: `৳${amount.toLocaleString()} পরিশোধ হয়েছে` });
+      setShowCommissionForm(false);
+      setCommissionForm(emptyCommissionForm);
+      loadData();
+    } catch (err: any) {
+      toast({ title: "ত্রুটি", description: err.message, variant: "destructive" });
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -168,6 +217,9 @@ export default function AdminMoallemProfilePage() {
   const totalMoallemDeposit = moallemPayments.reduce((s, p) => s + Number(p.amount), 0);
   const totalMoallemPaid = bookings.reduce((s, b) => s + Number(b.paid_by_moallem || 0), 0);
   const totalMoallemDue = bookings.reduce((s, b) => s + Number(b.moallem_due || 0), 0);
+  const totalCommissionEarned = bookings.reduce((s, b) => s + Number(b.total_commission || 0), 0);
+  const totalCommissionPaid = bookings.reduce((s, b) => s + Number(b.commission_paid || 0), 0);
+  const totalCommissionDue = bookings.reduce((s, b) => s + Number(b.commission_due || 0), 0);
   const profit = totalPaid - totalExpenses;
 
   // Hajji list
@@ -206,9 +258,14 @@ export default function AdminMoallemProfilePage() {
         </div>
         <div className="flex items-center gap-2">
           {!isViewer && (
-            <Button onClick={() => setShowPaymentForm(true)}>
-              <Plus className="h-4 w-4 mr-1" /> পেমেন্ট রেকর্ড
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setShowCommissionForm(true)}>
+                <Plus className="h-4 w-4 mr-1" /> কমিশন পরিশোধ
+              </Button>
+              <Button onClick={() => setShowPaymentForm(true)}>
+                <Plus className="h-4 w-4 mr-1" /> পেমেন্ট রেকর্ড
+              </Button>
+            </>
           )}
           <Badge variant={moallem.status === "active" ? "default" : "secondary"} className="text-sm">
             {moallem.status === "active" ? "সক্রিয়" : "নিষ্ক্রিয়"}
@@ -230,17 +287,33 @@ export default function AdminMoallemProfilePage() {
       </Card>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
           { icon: <Users className="h-5 w-5 text-primary" />, value: totalHajji, label: "মোট হাজী", cls: "text-foreground" },
           { icon: <FileText className="h-5 w-5 text-primary" />, value: totalBookings, label: "মোট বুকিং", cls: "text-foreground" },
           { icon: <CreditCard className="h-5 w-5 text-primary" />, value: fmt(totalPackageAmount), label: "মোট বিক্রয়", cls: "text-foreground", small: true },
           { icon: <Wallet className="h-5 w-5 text-emerald-500" />, value: fmt(totalMoallemPaid), label: "মোয়াল্লেম পরিশোধিত", cls: "text-emerald-500", small: true },
           { icon: <TrendingDown className="h-5 w-5 text-destructive" />, value: fmt(totalMoallemDue), label: "মোয়াল্লেম বকেয়া", cls: "text-destructive", small: true },
-          { icon: <TrendingUp className="h-5 w-5 text-emerald-500" />, value: fmt(totalMoallemDeposit), label: "মোয়াল্লেম জমা", cls: "text-emerald-500", small: true },
-          { icon: profit >= 0 ? <TrendingUp className="h-5 w-5 text-emerald-500" /> : <TrendingDown className="h-5 w-5 text-destructive" />, value: fmt(profit), label: "লাভ", cls: profit >= 0 ? "text-emerald-500" : "text-destructive", small: true },
         ].map((kpi, i) => (
           <Card key={i}>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="mx-auto mb-1 flex justify-center">{kpi.icon}</div>
+              <p className={`${kpi.small ? "text-lg" : "text-2xl"} font-bold ${kpi.cls}`}>{kpi.value}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{kpi.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Commission KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {[
+          { icon: <CreditCard className="h-5 w-5 text-primary" />, value: fmt(totalCommissionEarned), label: "মোট কমিশন", cls: "text-foreground", small: true },
+          { icon: <Wallet className="h-5 w-5 text-emerald-500" />, value: fmt(totalCommissionPaid), label: "কমিশন পরিশোধিত", cls: "text-emerald-500", small: true },
+          { icon: <TrendingDown className="h-5 w-5 text-destructive" />, value: fmt(totalCommissionDue), label: "কমিশন বকেয়া", cls: "text-destructive", small: true },
+          { icon: profit >= 0 ? <TrendingUp className="h-5 w-5 text-emerald-500" /> : <TrendingDown className="h-5 w-5 text-destructive" />, value: fmt(profit), label: "লাভ", cls: profit >= 0 ? "text-emerald-500" : "text-destructive", small: true },
+        ].map((kpi, i) => (
+          <Card key={`c-${i}`}>
             <CardContent className="pt-4 pb-4 text-center">
               <div className="mx-auto mb-1 flex justify-center">{kpi.icon}</div>
               <p className={`${kpi.small ? "text-lg" : "text-2xl"} font-bold ${kpi.cls}`}>{kpi.value}</p>
@@ -344,7 +417,8 @@ export default function AdminMoallemProfilePage() {
                   <tr className="border-b border-border text-left text-muted-foreground text-xs">
                      <th className="pb-2 pr-3">ট্র্যাকিং</th><th className="pb-2 pr-3">কাস্টমার</th>
                      <th className="pb-2 pr-3">প্যাকেজ</th><th className="pb-2 pr-3">যাত্রী</th>
-                     <th className="pb-2 pr-3">মোট</th><th className="pb-2 pr-3">মোয়াল্লেম পরিশোধিত</th>
+                     <th className="pb-2 pr-3">মোট</th><th className="pb-2 pr-3">কমিশন</th>
+                     <th className="pb-2 pr-3">কমিশন বকেয়া</th><th className="pb-2 pr-3">মোয়াল্লেম পরিশোধিত</th>
                      <th className="pb-2 pr-3">মোয়াল্লেম বকেয়া</th><th className="pb-2 pr-3">স্ট্যাটাস</th>
                      <th className="pb-2">তারিখ</th>
                   </tr>
@@ -358,6 +432,8 @@ export default function AdminMoallemProfilePage() {
                       <td className="py-2 pr-3">{b.packages?.name || "—"}</td>
                       <td className="py-2 pr-3">{b.num_travelers}</td>
                        <td className="py-2 pr-3 font-medium">{fmt(b.total_amount)}</td>
+                       <td className="py-2 pr-3">{fmt(b.total_commission)}</td>
+                       <td className="py-2 pr-3 text-destructive">{fmt(b.commission_due)}</td>
                        <td className="py-2 pr-3 text-emerald-500">{fmt(b.paid_by_moallem)}</td>
                        <td className="py-2 pr-3 text-destructive">{fmt(b.moallem_due)}</td>
                       <td className="py-2 pr-3">
@@ -404,6 +480,45 @@ export default function AdminMoallemProfilePage() {
                       <td className="py-2">
                         <Badge variant={p.status === "completed" ? "default" : "secondary"} className="text-[10px] capitalize">{p.status}</Badge>
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Commission Payment History */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-primary" /> কমিশন পরিশোধ হিস্ট্রি ({commissionPayments.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {commissionPayments.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">কোনো কমিশন পরিশোধ রেকর্ড নেই</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground text-xs">
+                    <th className="pb-2 pr-3">তারিখ</th>
+                    <th className="pb-2 pr-3">বুকিং</th>
+                    <th className="pb-2 pr-3">পরিমাণ</th>
+                    <th className="pb-2 pr-3">পদ্ধতি</th>
+                    <th className="pb-2">নোট</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commissionPayments.map((cp: any) => (
+                    <tr key={cp.id} className="border-b border-border/30">
+                      <td className="py-2 pr-3 text-xs">{format(new Date(cp.date), "dd MMM yyyy")}</td>
+                      <td className="py-2 pr-3 text-xs font-mono text-primary">{cp.booking_id ? bookings.find((b: any) => b.id === cp.booking_id)?.tracking_id || "—" : "—"}</td>
+                      <td className="py-2 pr-3 font-bold text-destructive">{fmt(cp.amount)}</td>
+                      <td className="py-2 pr-3 capitalize">{cp.payment_method}</td>
+                      <td className="py-2 text-xs text-muted-foreground">{cp.notes || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -529,6 +644,71 @@ export default function AdminMoallemProfilePage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPaymentForm(false)}>বাতিল</Button>
             <Button onClick={handleRecordPayment} disabled={paymentLoading}>
+              {paymentLoading ? "প্রক্রিয়াকরণ..." : "রেকর্ড করুন"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Commission Payment Dialog */}
+      <Dialog open={showCommissionForm} onOpenChange={(o) => { if (!o) setShowCommissionForm(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>কমিশন পরিশোধ রেকর্ড</DialogTitle>
+            <DialogDescription>{moallem.name} — কমিশন বকেয়া: {fmt(totalCommissionDue)}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">বুকিং (ঐচ্ছিক)</label>
+              <Select value={commissionForm.booking_id} onValueChange={(v) => setCommissionForm({ ...commissionForm, booking_id: v })}>
+                <SelectTrigger><SelectValue placeholder="-- বুকিং নির্বাচন করুন --" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">কোনো বুকিং নয়</SelectItem>
+                  {bookings.filter((b: any) => Number(b.commission_due || 0) > 0).map((b: any) => (
+                    <SelectItem key={b.id} value={b.id}>{b.tracking_id} — কমিশন বকেয়া: {fmt(b.commission_due)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">পরিমাণ (৳) *</label>
+              <Input type="number" min={1} value={commissionForm.amount}
+                onChange={(e) => setCommissionForm({ ...commissionForm, amount: e.target.value })} placeholder="পরিমাণ লিখুন" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">পেমেন্ট পদ্ধতি</label>
+              <Select value={commissionForm.payment_method} onValueChange={(v) => setCommissionForm({ ...commissionForm, payment_method: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m} className="capitalize">{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">ওয়ালেট অ্যাকাউন্ট (ঐচ্ছিক)</label>
+              <Select value={commissionForm.wallet_account_id} onValueChange={(v) => setCommissionForm({ ...commissionForm, wallet_account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="-- নির্বাচন করুন --" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">কোনোটি নয়</SelectItem>
+                  {walletAccounts.map((a: any) => <SelectItem key={a.id} value={a.id}>{a.name} ({fmt(a.balance)})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">তারিখ</label>
+              <Input type="date" value={commissionForm.date} onChange={(e) => setCommissionForm({ ...commissionForm, date: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">নোট</label>
+              <Textarea value={commissionForm.notes} onChange={(e) => setCommissionForm({ ...commissionForm, notes: e.target.value })} rows={2} placeholder="অতিরিক্ত তথ্য..." />
+            </div>
+            <div className="bg-accent/50 rounded-lg p-3 text-xs text-muted-foreground">
+              💡 কমিশন পরিশোধ স্বয়ংক্রিয়ভাবে খরচ হিসেবে রেকর্ড হবে।
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCommissionForm(false)}>বাতিল</Button>
+            <Button onClick={handleRecordCommission} disabled={paymentLoading}>
               {paymentLoading ? "প্রক্রিয়াকরণ..." : "রেকর্ড করুন"}
             </Button>
           </DialogFooter>

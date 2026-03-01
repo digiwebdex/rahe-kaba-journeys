@@ -48,6 +48,7 @@ export default function AdminCreateBookingPage() {
     paid_amount: 0,
     cost_price_per_person: 0,
     extra_expense: 0,
+    commission_per_person: 0,
     status: "pending",
     notes: "",
     moallem_id: "",
@@ -56,7 +57,8 @@ export default function AdminCreateBookingPage() {
 
   const totalSellingPrice = form.selling_price_per_person * form.num_travelers;
   const totalCost = form.cost_price_per_person * form.num_travelers;
-  const profitAmount = totalSellingPrice - totalCost - form.extra_expense;
+  const totalCommission = form.commission_per_person * form.num_travelers;
+  const profitAmount = totalSellingPrice - totalCost - totalCommission - form.extra_expense;
   const dueAmount = Math.max(0, totalSellingPrice - form.paid_amount);
 
   useEffect(() => {
@@ -192,6 +194,8 @@ export default function AdminCreateBookingPage() {
         cost_price_per_person: form.cost_price_per_person || 0,
         total_cost: totalCost,
         extra_expense: form.extra_expense || 0,
+        commission_per_person: form.commission_per_person || 0,
+        total_commission: totalCommission,
         profit_amount: profitAmount,
         status: form.status,
         notes: form.notes.trim() || null,
@@ -403,11 +407,26 @@ export default function AdminCreateBookingPage() {
               ৳{totalSellingPrice.toLocaleString()}
             </div>
           </div>
-          <div>
+           <div>
             <label className="text-xs text-muted-foreground block mb-1">অতিরিক্ত খরচ (৳)</label>
             <input className={inputClass} type="number" min={0} value={form.extra_expense}
               onChange={(e) => setForm(f => ({ ...f, extra_expense: Math.max(0, parseFloat(e.target.value) || 0) }))} />
           </div>
+          {form.moallem_id && (
+            <>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">কমিশন/ব্যক্তি (৳)</label>
+                <input className={inputClass} type="number" min={0} value={form.commission_per_person}
+                  onChange={(e) => setForm(f => ({ ...f, commission_per_person: Math.max(0, parseFloat(e.target.value) || 0) }))} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">মোট কমিশন (৳) — স্বয়ংক্রিয়</label>
+                <div className={`${inputClass} bg-muted/50 font-bold text-foreground`}>
+                  ৳{totalCommission.toLocaleString()}
+                </div>
+              </div>
+            </>
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
@@ -448,7 +467,7 @@ export default function AdminCreateBookingPage() {
       {/* Live Summary */}
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
         <h3 className="font-heading font-semibold text-sm mb-3">সারসংক্ষেপ</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-3 text-sm">
           <div>
             <p className="text-xs text-muted-foreground">কাস্টমার</p>
             <p className="font-medium">{form.guest_name || "—"}</p>
@@ -465,6 +484,12 @@ export default function AdminCreateBookingPage() {
             <p className="text-xs text-muted-foreground">ক্রয় মূল্য</p>
             <p className="font-heading font-bold text-foreground">৳{totalCost.toLocaleString()}</p>
           </div>
+          {form.moallem_id && (
+            <div>
+              <p className="text-xs text-muted-foreground">কমিশন</p>
+              <p className="font-heading font-bold text-foreground">৳{totalCommission.toLocaleString()}</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-muted-foreground">অতিরিক্ত খরচ</p>
             <p className="font-heading font-bold text-foreground">৳{form.extra_expense.toLocaleString()}</p>

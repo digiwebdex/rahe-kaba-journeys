@@ -170,6 +170,8 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
   const totalSales = filteredBookings.reduce((s: number, b: any) => s + Number(b.total_amount || 0), 0);
   const totalPurchaseCost = filteredBookings.reduce((s: number, b: any) => s + Number(b.total_cost || 0), 0);
   const totalExtraExpense = filteredBookings.reduce((s: number, b: any) => s + Number(b.extra_expense || 0), 0);
+  const totalCommission = filteredBookings.reduce((s: number, b: any) => s + Number(b.total_commission || 0), 0);
+  const totalCommissionDue = filteredBookings.reduce((s: number, b: any) => s + Number(b.commission_due || 0), 0);
   const totalBookingProfit = filteredBookings.reduce((s: number, b: any) => s + Number(b.profit_amount || 0), 0);
 
   // Monthly profit chart (revenue - expenses per month)
@@ -243,6 +245,7 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
       supplierPaid: Number(b.paid_to_supplier || 0), supplierDue: Number(b.supplier_due || 0),
       moallemPaid: Number(b.paid_by_moallem || 0), moallemDue: Number(b.moallem_due || 0),
       hasMoallem: !!b.moallem_id,
+      commission: Number(b.total_commission || 0), commissionPaid: Number(b.commission_paid || 0), commissionDue: Number(b.commission_due || 0),
       profit: Number(b.profit_amount || 0), status: b.status, date: b.created_at,
     };
   }), [filteredBookings, expenses]);
@@ -318,6 +321,7 @@ const AdminDashboardCharts = ({ bookings, payments, expenses = [], accounts = []
         {[
           { label: "Total Sales", value: `৳${totalSales.toLocaleString()}`, icon: DollarSign, color: "text-primary", bgColor: "bg-primary/10" },
           { label: "Purchase Cost", value: `৳${totalPurchaseCost.toLocaleString()}`, icon: TrendingDown, color: "text-muted-foreground", bgColor: "bg-secondary" },
+          { label: "Commission", value: `৳${totalCommission.toLocaleString()}`, icon: Receipt, color: "text-yellow-600", bgColor: "bg-yellow-500/10" },
           { label: "Extra Expenses", value: `৳${totalExtraExpense.toLocaleString()}`, icon: Receipt, color: "text-destructive", bgColor: "bg-destructive/10" },
           { label: "Booking Profit", value: `৳${totalBookingProfit.toLocaleString()}`, icon: TrendingUp, color: totalBookingProfit >= 0 ? "text-emerald" : "text-destructive", bgColor: totalBookingProfit >= 0 ? "bg-emerald/10" : "bg-destructive/10" },
         ].map((c) => (
