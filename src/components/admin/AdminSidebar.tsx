@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FileText, Users, Package, Building2, CreditCard,
-  Calculator, BarChart3, Pencil, Settings, LogOut, AlertTriangle, Bell, BookOpen, Receipt, UserCheck,
+  Calculator, BarChart3, Pencil, Settings, LogOut, AlertTriangle, Bell, BookOpen, Receipt, UserCheck, Truck,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { NavLink } from "@/components/NavLink";
@@ -28,6 +28,7 @@ const menuItems = [
   { title: "Receivables", url: "/admin/receivables", icon: Receipt, roles: ["admin", "manager", "accountant", "viewer"] },
   { title: "Reports", url: "/admin/reports", icon: BarChart3, roles: ["admin", "manager", "accountant", "viewer"] },
   { title: "Moallems", url: "/admin/moallems", icon: UserCheck, roles: ["admin", "manager", "staff", "viewer"] },
+  { title: "Supplier Agents", url: "/admin/supplier-agents", icon: Truck, roles: ["admin", "manager", "staff", "viewer"] },
   { title: "CMS", url: "/admin/cms", icon: Pencil, roles: ["admin"] },
   { title: "Settings", url: "/admin/settings", icon: Settings, roles: ["admin"] },
 ];
