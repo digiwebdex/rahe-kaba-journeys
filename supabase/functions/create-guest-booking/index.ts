@@ -203,7 +203,6 @@ Deno.serve(async (req) => {
     if (email?.trim()) {
       const resendKey = Deno.env.get("RESEND_API_KEY");
       const fromEmail = Deno.env.get("NOTIFICATION_FROM_EMAIL") || "noreply@example.com";
-      const siteUrl = Deno.env.get("SUPABASE_URL")?.replace(".supabase.co", "").replace("https://", "") || "";
 
       if (resendKey) {
         const loginSection = autoCreated && tempPassword
@@ -243,11 +242,12 @@ Deno.serve(async (req) => {
             headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
             body: JSON.stringify({ from: fromEmail, to: [email.trim()], subject, html }),
           });
+          console.log("Email sent to:", email.trim());
         } catch (e) {
           console.error("Email send error:", e);
         }
 
-        // Log notification
+        // Log email notification
         if (userId) {
           try {
             await supabase.from("notification_logs").insert({
@@ -261,7 +261,44 @@ Deno.serve(async (req) => {
               status: "sent",
             });
           } catch (logErr) {
-            console.error("Notification log error:", logErr);
+            console.error("Email notification log error:", logErr);
+          }
+        }
+      }
+    }
+
+    // SEND SMS NOTIFICATION with tracking ID
+    if (phone?.trim()) {
+      const smsApiKey = Deno.env.get("BULKSMSBD_API_KEY");
+      const smsSenderId = Deno.env.get("BULKSMSBD_SENDER_ID") || "8809617618686";
+
+      if (smsApiKey) {
+        const smsMessage = `Rahe Kaba: Your booking is confirmed!\nTracking ID: ${booking.tracking_id}\nPackage: ${pkg.name}\nTravelers: ${numTravelers}\nTotal: BDT ${totalAmount.toLocaleString()}\nTrack: rahe-kaba-journeys.lovable.app/track?id=${booking.tracking_id}`;
+
+        try {
+          const smsUrl = `https://bulksmsbd.net/api/smsapi?api_key=${smsApiKey}&type=text&number=${phone.trim()}&senderid=${smsSenderId}&message=${encodeURIComponent(smsMessage)}`;
+          const smsRes = await fetch(smsUrl);
+          const smsResult = await smsRes.text();
+          console.log("SMS sent to:", phone.trim(), "Result:", smsResult);
+        } catch (e) {
+          console.error("SMS send error:", e);
+        }
+
+        // Log SMS notification
+        if (userId) {
+          try {
+            await supabase.from("notification_logs").insert({
+              user_id: userId,
+              booking_id: booking.id,
+              event_type: "booking_created",
+              channel: "sms",
+              recipient: phone.trim(),
+              subject: "Booking Confirmation SMS",
+              message: smsMessage,
+              status: "sent",
+            });
+          } catch (logErr) {
+            console.error("SMS notification log error:", logErr);
           }
         }
       }
