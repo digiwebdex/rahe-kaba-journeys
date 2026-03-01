@@ -932,6 +932,42 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_agents: {
+        Row: {
+          address: string | null
+          agent_name: string
+          company_name: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          agent_name: string
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          agent_name?: string
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
