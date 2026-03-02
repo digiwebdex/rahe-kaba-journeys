@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoImg from "@/assets/logo.jpg";
 import { getSignatureData, SignatureData } from "./pdfSignature";
+import { generateTrackingQr, addQrToDoc } from "./pdfQrCode";
 
 export interface CompanyInfo {
   name?: string;
@@ -150,9 +151,12 @@ export async function generateInvoice(
   company: CompanyInfo
 ) {
   const doc = new jsPDF();
-  const [logoBase64, sig] = await Promise.all([loadLogoBase64(), getSignatureData()]);
+  const [logoBase64, sig, qrDataUrl] = await Promise.all([loadLogoBase64(), getSignatureData(), generateTrackingQr(booking.tracking_id)]);
   let y = addHeader(doc, company, logoBase64);
   const pageWidth = doc.internal.pageSize.getWidth();
+
+  // QR code top-right
+  addQrToDoc(doc, qrDataUrl, { x: pageWidth - 42, y: 10, size: 26 });
 
   // Invoice title
   doc.setFontSize(14);
@@ -250,9 +254,12 @@ export async function generateReceipt(
   allPayments?: InvoicePayment[]
 ) {
   const doc = new jsPDF();
-  const [logoBase64, sig] = await Promise.all([loadLogoBase64(), getSignatureData()]);
+  const [logoBase64, sig, qrDataUrl] = await Promise.all([loadLogoBase64(), getSignatureData(), generateTrackingQr(booking.tracking_id)]);
   let y = addHeader(doc, company, logoBase64);
   const pageWidth = doc.internal.pageSize.getWidth();
+
+  // QR code top-right
+  addQrToDoc(doc, qrDataUrl, { x: pageWidth - 42, y: 10, size: 26 });
 
   // Receipt title
   doc.setFontSize(14);
@@ -340,9 +347,12 @@ export async function generateCommissionReceipt(
   company: CompanyInfo
 ) {
   const doc = new jsPDF();
-  const [logoBase64, sig] = await Promise.all([loadLogoBase64(), getSignatureData()]);
+  const [logoBase64, sig, qrDataUrl] = await Promise.all([loadLogoBase64(), getSignatureData(), generateTrackingQr(data.bookingTrackingId)]);
   let y = addHeader(doc, company, logoBase64);
   const pageWidth = doc.internal.pageSize.getWidth();
+
+  // QR code top-right
+  addQrToDoc(doc, qrDataUrl, { x: pageWidth - 42, y: 10, size: 26 });
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");

@@ -121,10 +121,20 @@ export default function InvoicePage() {
                 <p className="text-xs text-gray-500 mt-1">{company.phone} | {company.email}</p>
                 <p className="text-xs text-gray-500" style={{ fontFamily: "'Noto Sans Bengali', Arial, sans-serif" }}>{companyAddressBn}</p>
               </div>
-              <div className="text-right">
-                <h2 className="text-xl font-bold text-gray-800">INVOICE</h2>
-                <p className="text-sm text-gray-600">#{booking.tracking_id}</p>
-                <p className="text-sm text-gray-600">{fmtDate(new Date().toISOString())}</p>
+              <div className="text-right flex flex-col items-end gap-2">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">INVOICE</h2>
+                  <p className="text-sm text-gray-600">#{booking.tracking_id}</p>
+                  <p className="text-sm text-gray-600">{fmtDate(new Date().toISOString())}</p>
+                </div>
+                {/* QR Code for print */}
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`https://rahe-kaba-journeys.lovable.app/track?id=${booking.tracking_id}`)}`}
+                  alt="QR Code"
+                  className="w-20 h-20"
+                  style={{ imageRendering: "pixelated" }}
+                />
+                <p className="text-[8px] text-gray-400">Scan to Track</p>
               </div>
             </div>
 

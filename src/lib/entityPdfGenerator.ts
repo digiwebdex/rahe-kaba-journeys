@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import logoImg from "@/assets/logo.jpg";
 import { CompanyInfo } from "./invoiceGenerator";
 import { getSignatureData, SignatureData } from "./pdfSignature";
+import { generateTrackingQr, addQrToDoc } from "./pdfQrCode";
 
 const fmt = (n: number) => `BDT ${n.toLocaleString()}`;
 const fmtDate = (d: string | null) =>
@@ -112,9 +113,17 @@ export interface MoallemPdfData {
 
 export async function generateMoallemPdf(data: MoallemPdfData, company: CompanyInfo) {
   const doc = new jsPDF();
-  const [logoBase64, sig] = await Promise.all([loadLogoBase64(), getSignatureData()]);
+  // Use first booking tracking_id for QR if available
+  const firstTrackingId = data.bookings[0]?.tracking_id;
+  const [logoBase64, sig, qrDataUrl] = await Promise.all([
+    loadLogoBase64(),
+    getSignatureData(),
+    firstTrackingId ? generateTrackingQr(firstTrackingId) : Promise.resolve(""),
+  ]);
   let y = addHeader(doc, company, logoBase64);
   const pw = doc.internal.pageSize.getWidth();
+
+  if (qrDataUrl) addQrToDoc(doc, qrDataUrl, { x: pw - 42, y: 10, size: 26 });
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
@@ -218,9 +227,16 @@ export interface SupplierPdfData {
 
 export async function generateSupplierPdf(data: SupplierPdfData, company: CompanyInfo) {
   const doc = new jsPDF();
-  const [logoBase64, sig] = await Promise.all([loadLogoBase64(), getSignatureData()]);
+  const firstTrackingId = data.bookings[0]?.tracking_id;
+  const [logoBase64, sig, qrDataUrl] = await Promise.all([
+    loadLogoBase64(),
+    getSignatureData(),
+    firstTrackingId ? generateTrackingQr(firstTrackingId) : Promise.resolve(""),
+  ]);
   let y = addHeader(doc, company, logoBase64);
   const pw = doc.internal.pageSize.getWidth();
+
+  if (qrDataUrl) addQrToDoc(doc, qrDataUrl, { x: pw - 42, y: 10, size: 26 });
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
@@ -302,9 +318,16 @@ export interface CustomerPdfData {
 
 export async function generateCustomerPdf(data: CustomerPdfData, company: CompanyInfo) {
   const doc = new jsPDF();
-  const [logoBase64, sig] = await Promise.all([loadLogoBase64(), getSignatureData()]);
+  const firstTrackingId = data.bookings[0]?.tracking_id;
+  const [logoBase64, sig, qrDataUrl] = await Promise.all([
+    loadLogoBase64(),
+    getSignatureData(),
+    firstTrackingId ? generateTrackingQr(firstTrackingId) : Promise.resolve(""),
+  ]);
   let y = addHeader(doc, company, logoBase64);
   const pw = doc.internal.pageSize.getWidth();
+
+  if (qrDataUrl) addQrToDoc(doc, qrDataUrl, { x: pw - 42, y: 10, size: 26 });
 
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
