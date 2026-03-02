@@ -260,7 +260,7 @@ export default function AdminBookingsPage() {
   const filtered = bookings.filter((b) => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return (b.tracking_id?.toLowerCase().includes(q) || b.guest_name?.toLowerCase()?.includes(q) || b.packages?.name?.toLowerCase().includes(q) || b.status?.toLowerCase().includes(q));
+    return (b.tracking_id?.toLowerCase().includes(q) || b.guest_name?.toLowerCase()?.includes(q) || b.guest_passport?.toLowerCase()?.includes(q) || b.packages?.name?.toLowerCase().includes(q) || b.status?.toLowerCase().includes(q));
   });
 
   const getBookingActions = (b: any): ActionItem[] => [
@@ -428,7 +428,7 @@ export default function AdminBookingsPage() {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <p className="font-mono font-bold text-primary text-sm">{b.tracking_id}</p>
-                  <p className="text-sm text-muted-foreground">{b.guest_name || "Unknown"} • {b.packages?.name || "N/A"}{b.moallems?.name ? ` • মোয়াল্লেম: ${b.moallems.name}` : ""}</p>
+                  <p className="text-sm text-muted-foreground">{b.guest_name || "Unknown"}{b.guest_passport ? ` (${b.guest_passport})` : ""} • {b.packages?.name || "N/A"}{b.moallems?.name ? ` • মোয়াল্লেম: ${b.moallems.name}` : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${b.status === "completed" ? "text-emerald bg-emerald/10" : b.status === "cancelled" ? "text-destructive bg-destructive/10" : "text-primary bg-primary/10"}`}>
