@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { BookOpen, CheckCircle2, XCircle, Phone, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const steps = [
@@ -122,13 +122,13 @@ const dontsEn = [
   "Speaking ill",
 ];
 
-export default function GuidelineSection() {
+const GuidelineSection = forwardRef<HTMLElement>(function GuidelineSection(_, ref) {
   const { language } = useLanguage();
   const bn = language === "bn";
   const [expandedStep, setExpandedStep] = useState<number | null>(0);
 
   return (
-    <section id="guideline" className="py-20 bg-background islamic-pattern">
+    <section ref={ref} id="guideline" className="py-20 bg-background islamic-pattern">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -269,4 +269,6 @@ export default function GuidelineSection() {
       </div>
     </section>
   );
-}
+});
+
+export default GuidelineSection;

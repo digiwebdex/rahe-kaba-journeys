@@ -1,9 +1,10 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { useSiteContent } from "@/hooks/useSiteContent";
 import { useLanguage } from "@/i18n/LanguageContext";
 
-const ContactSection = () => {
+const ContactSection = forwardRef<HTMLElement>(function ContactSection(_, ref) {
   const { data: content } = useSiteContent("contact");
   const { t, language } = useLanguage();
 
@@ -21,7 +22,7 @@ const ContactSection = () => {
   ];
 
   return (
-    <section id="contact" className="py-24 bg-card">
+    <section ref={ref} id="contact" className="py-24 bg-card">
       <div className="container mx-auto px-4">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
           <span className="text-primary text-sm font-medium tracking-[0.3em] uppercase">{lc?.section_label || t("contact.label")}</span>
@@ -69,6 +70,6 @@ const ContactSection = () => {
       </div>
     </section>
   );
-};
+});
 
 export default ContactSection;
