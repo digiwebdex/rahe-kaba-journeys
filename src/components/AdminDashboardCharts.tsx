@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -9,6 +9,9 @@ import {
   Users, Wallet, FileText, CreditCard, ArrowUpRight, ArrowDownRight, UserCheck,
 } from "lucide-react";
 import { format, startOfMonth, subMonths } from "date-fns";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Props {
   bookings: any[];
@@ -33,6 +36,7 @@ const AdminDashboardCharts = ({
   moallems = [], supplierAgents = [], onMarkPaid
 }: Props) => {
   const navigate = useNavigate();
+  const [showDueCustomers, setShowDueCustomers] = useState(false);
 
   // ── KPIs ──
   const totalSales = bookings.reduce((s, b) => s + Number(b.total_amount || 0), 0);
@@ -48,6 +52,22 @@ const AdminDashboardCharts = ({
   const customerDue = bookings.reduce((s, b) => s + Number(b.due_amount || 0), 0);
   const supplierDue = bookings.reduce((s, b) => s + Number(b.supplier_due || 0), 0);
   const commissionDue = bookings.reduce((s, b) => s + Number(b.commission_due || 0), 0);
+
+  // Customers with dues - group by guest_name/phone
+  const dueCustomers = useMemo(() => {
+    const map: Record<string, { name: string; phone: string; totalDue: number; totalAmount: number; bookingCount: number; bookings: any[] }> = {};
+    bookings.filter(b => Number(b.due_amount || 0) > 0).forEach(b => {
+      const key = b.guest_phone || b.guest_name || b.tracking_id;
+      if (!map[key]) {
+        map[key] = { name: b.guest_name || "N/A", phone: b.guest_phone || "", totalDue: 0, totalAmount: 0, bookingCount: 0, bookings: [] };
+      }
+      map[key].totalDue += Number(b.due_amount || 0);
+      map[key].totalAmount += Number(b.total_amount || 0);
+      map[key].bookingCount += 1;
+      map[key].bookings.push(b);
+    });
+    return Object.values(map).sort((a, b) => b.totalDue - a.totalDue);
+  }, [bookings]);
 
   // Monthly chart
   const monthlyData = useMemo(() => {
@@ -73,15 +93,19 @@ const AdminDashboardCharts = ({
       {/* ═══ TOP KPI CARDS ═══ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {[
-          { label: "মোট বিক্রয়", value: fmt(totalSales), icon: DollarSign, color: "text-primary" },
-          { label: "আয় প্রাপ্ত", value: fmt(totalIncome), icon: ArrowUpRight, color: "text-emerald" },
-          { label: "নিট লাভ", value: fmt(netProfit), icon: TrendingUp, color: netProfit >= 0 ? "text-emerald" : "text-destructive" },
-          { label: "ক্যাশ ব্যালেন্স", value: fmt(cashBank), icon: Wallet, color: "text-primary" },
-          { label: "মোট বুকিং", value: bookings.length, icon: Package, color: "text-foreground" },
-          { label: "মোট হাজী", value: totalHajji, icon: Users, color: "text-foreground" },
-          { label: "কাস্টমার বকেয়া", value: fmt(customerDue), icon: UserCheck, color: customerDue > 0 ? "text-yellow-500" : "text-emerald" },
+          { label: "মোট বিক্রয়", value: fmt(totalSales), icon: DollarSign, color: "text-primary", onClick: undefined },
+          { label: "আয় প্রাপ্ত", value: fmt(totalIncome), icon: ArrowUpRight, color: "text-emerald", onClick: undefined },
+          { label: "নিট লাভ", value: fmt(netProfit), icon: TrendingUp, color: netProfit >= 0 ? "text-emerald" : "text-destructive", onClick: undefined },
+          { label: "ক্যাশ ব্যালেন্স", value: fmt(cashBank), icon: Wallet, color: "text-primary", onClick: undefined },
+          { label: "মোট বুকিং", value: bookings.length, icon: Package, color: "text-foreground", onClick: undefined },
+          { label: "মোট হাজী", value: totalHajji, icon: Users, color: "text-foreground", onClick: undefined },
+          { label: "কাস্টমার বকেয়া", value: fmt(customerDue), icon: UserCheck, color: customerDue > 0 ? "text-yellow-500" : "text-emerald", onClick: () => setShowDueCustomers(true) },
         ].map(k => (
-          <div key={k.label} className="bg-card border border-border rounded-xl p-4">
+          <div
+            key={k.label}
+            className={`bg-card border border-border rounded-xl p-4 ${k.onClick ? "cursor-pointer hover:border-primary/50 transition-colors" : ""}`}
+            onClick={k.onClick}
+          >
             <div className="flex items-center justify-between mb-1">
               <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{k.label}</p>
               <k.icon className={`h-4 w-4 ${k.color}`} />
@@ -186,6 +210,59 @@ const AdminDashboardCharts = ({
           ) : <p className="text-sm text-muted-foreground text-center py-8">কোনো পেমেন্ট নেই</p>}
         </div>
       </div>
+
+      {/* ═══ DUE CUSTOMERS DIALOG ═══ */}
+      <Dialog open={showDueCustomers} onOpenChange={setShowDueCustomers}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              বকেয়া কাস্টমার তালিকা
+              <span className="text-sm font-normal text-muted-foreground ml-2">({dueCustomers.length} জন)</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {dueCustomers.length > 0 ? (
+            <div className="space-y-2 mt-2">
+              {/* Summary */}
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center justify-between">
+                <span className="text-sm font-medium">মোট বকেয়া</span>
+                <span className="text-lg font-bold text-destructive">{fmt(customerDue)}</span>
+              </div>
+
+              {/* Customer list */}
+              {dueCustomers.map((c, i) => (
+                <div key={i} className="bg-secondary/30 border border-border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-sm font-semibold">{c.name}</p>
+                      {c.phone && <p className="text-xs text-muted-foreground">{c.phone}</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-bold text-destructive">{fmt(c.totalDue)}</p>
+                      <p className="text-[10px] text-muted-foreground">{c.bookingCount}টি বুকিং</p>
+                    </div>
+                  </div>
+                  {/* Booking breakdown */}
+                  <div className="space-y-1 mt-2 border-t border-border pt-2">
+                    {c.bookings.map((b: any) => (
+                      <div key={b.id} className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{b.tracking_id} · {b.packages?.name || ""}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-muted-foreground">মোট: {fmt(Number(b.total_amount))}</span>
+                          <span className="font-semibold text-destructive">বকেয়া: {fmt(Number(b.due_amount))}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">কোনো বকেয়া নেই 🎉</p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
