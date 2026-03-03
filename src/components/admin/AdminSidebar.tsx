@@ -13,19 +13,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { AppRole } from "@/hooks/useUserRole";
 
-// Role access matrix — ordered as requested
+// Role access matrix — new 5-role system
 const menuItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: ["admin", "manager", "accountant", "staff", "viewer"] },
-  { title: "Bookings", url: "/admin/bookings", icon: FileText, roles: ["admin", "manager", "staff", "viewer"] },
-  { title: "Customers", url: "/admin/customers", icon: Users, roles: ["admin", "manager", "staff", "viewer"] },
-  { title: "Moallems", url: "/admin/moallems", icon: UserCheck, roles: ["admin", "manager", "staff", "viewer"] },
-  { title: "Supplier Agents", url: "/admin/supplier-agents", icon: Truck, roles: ["admin", "manager", "staff", "viewer"] },
-  { title: "Payments", url: "/admin/payments", icon: CreditCard, roles: ["admin", "manager", "accountant", "staff", "viewer"] },
-  { title: "Accounting", url: "/admin/accounting", icon: Calculator, roles: ["admin", "accountant", "viewer"] },
-  { title: "Reports", url: "/admin/reports", icon: BarChart3, roles: ["admin", "manager", "accountant", "viewer"] },
-  { title: "Packages", url: "/admin/packages", icon: Package, roles: ["admin", "manager", "viewer"] },
-  { title: "CMS", url: "/admin/cms", icon: Pencil, roles: ["admin"] },
-  { title: "Settings", url: "/admin/settings", icon: Settings, roles: ["admin"] },
+  { title: "Dashboard",       url: "/admin",                icon: LayoutDashboard, roles: ["admin", "accountant", "viewer"] },
+  { title: "Bookings",        url: "/admin/bookings",       icon: FileText,        roles: ["admin", "accountant", "booking", "viewer"] },
+  { title: "Customers",       url: "/admin/customers",      icon: Users,           roles: ["admin", "accountant", "booking", "viewer"] },
+  { title: "Moallems",        url: "/admin/moallems",       icon: UserCheck,       roles: ["admin", "accountant", "booking", "viewer"] },
+  { title: "Supplier Agents", url: "/admin/supplier-agents", icon: Truck,          roles: ["admin", "accountant", "viewer"] },
+  { title: "Payments",        url: "/admin/payments",       icon: CreditCard,      roles: ["admin", "accountant", "viewer"] },
+  { title: "Accounting",      url: "/admin/accounting",     icon: Calculator,      roles: ["admin", "viewer"] },
+  { title: "Reports",         url: "/admin/reports",        icon: BarChart3,       roles: ["admin", "accountant", "viewer"] },
+  { title: "Packages",        url: "/admin/packages",       icon: Package,         roles: ["admin", "viewer"] },
+  { title: "CMS",             url: "/admin/cms",            icon: Pencil,          roles: ["admin", "cms"] },
+  { title: "Settings",        url: "/admin/settings",       icon: Settings,        roles: ["admin"] },
 ];
 
 export function AdminSidebar({ role }: { role: AppRole }) {

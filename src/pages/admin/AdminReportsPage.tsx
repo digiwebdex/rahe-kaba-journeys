@@ -11,11 +11,13 @@ import { CalendarIcon, FileDown, FileSpreadsheet, ChevronDown, ChevronUp, Users,
 import { format, parseISO, isSameDay, isSameMonth, isSameYear, differenceInDays, startOfMonth, endOfMonth, getYear, getMonth, isWithinInterval, eachDayOfInterval, eachMonthOfInterval, subMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import { exportPDF, exportExcel, exportHajjiPDF, exportHajjiExcel } from "@/lib/reportExport";
+import { useCanSeeProfit } from "@/components/admin/AdminLayout";
 
 const fmt = (n: number) => `৳${n.toLocaleString()}`;
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
 export default function AdminReportsPage() {
+  const canSeeProfit = useCanSeeProfit();
   const [bookings, setBookings] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -459,16 +461,16 @@ export default function AdminReportsPage() {
           <TabsTrigger value="daily-financial">Daily Income/Expense</TabsTrigger>
           <TabsTrigger value="monthly-financial">Monthly Income/Expense</TabsTrigger>
           <TabsTrigger value="yearly">Yearly Summary</TabsTrigger>
-          <TabsTrigger value="pnl">Profit & Loss</TabsTrigger>
-          <TabsTrigger value="package">Package-wise</TabsTrigger>
+          {canSeeProfit && <TabsTrigger value="pnl">Profit & Loss</TabsTrigger>}
+          {canSeeProfit && <TabsTrigger value="package">Package-wise</TabsTrigger>}
           <TabsTrigger value="hajji">Hajji-wise</TabsTrigger>
           <TabsTrigger value="due">Due</TabsTrigger>
           <TabsTrigger value="overdue">Overdue</TabsTrigger>
           <TabsTrigger value="moallem-bookings">মোয়াল্লেম বুকিং</TabsTrigger>
           <TabsTrigger value="moallem-payments">মোয়াল্লেম পেমেন্ট</TabsTrigger>
           <TabsTrigger value="moallem-due">মোয়াল্লেম বকেয়া</TabsTrigger>
-          <TabsTrigger value="moallem-profit">মোয়াল্লেম লাভ</TabsTrigger>
-          <TabsTrigger value="moallem-commission">কমিশন রিপোর্ট</TabsTrigger>
+          {canSeeProfit && <TabsTrigger value="moallem-profit">মোয়াল্লেম লাভ</TabsTrigger>}
+          {canSeeProfit && <TabsTrigger value="moallem-commission">কমিশন রিপোর্ট</TabsTrigger>}
         </TabsList>
 
         {/* Filters */}

@@ -5,13 +5,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import {
-  TrendingUp, TrendingDown, DollarSign, Package,
+  TrendingUp, DollarSign, Package,
   Users, Wallet, FileText, CreditCard, ArrowUpRight, ArrowDownRight, UserCheck,
 } from "lucide-react";
 import { format, startOfMonth, subMonths } from "date-fns";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { useCanSeeProfit } from "@/components/admin/AdminLayout";
 
 interface Props {
   bookings: any[];
@@ -36,6 +37,7 @@ const AdminDashboardCharts = ({
   moallems = [], supplierAgents = [], onMarkPaid
 }: Props) => {
   const navigate = useNavigate();
+  const canSeeProfit = useCanSeeProfit();
   const [showDueCustomers, setShowDueCustomers] = useState(false);
 
   // ── KPIs ──
@@ -53,7 +55,7 @@ const AdminDashboardCharts = ({
   const supplierDue = bookings.reduce((s, b) => s + Number(b.supplier_due || 0), 0);
   const commissionDue = bookings.reduce((s, b) => s + Number(b.commission_due || 0), 0);
 
-  // Customers with dues - group by guest_name/phone
+  // Customers with dues
   const dueCustomers = useMemo(() => {
     const map: Record<string, { name: string; phone: string; totalDue: number; totalAmount: number; bookingCount: number; bookings: any[] }> = {};
     bookings.filter(b => Number(b.due_amount || 0) > 0).forEach(b => {
@@ -88,19 +90,29 @@ const AdminDashboardCharts = ({
   const recentBookings = bookings.slice(0, 5);
   const recentPayments = payments.filter(p => p.status === "completed").slice(0, 5);
 
+  // Build KPI cards dynamically based on role
+  const kpiCards = useMemo(() => {
+    const cards: { label: string; value: string | number; icon: any; color: string; onClick: () => void }[] = [
+      { label: "মোট বিক্রয়", value: fmt(totalSales), icon: DollarSign, color: "text-primary", onClick: () => navigate("/admin/bookings") },
+      { label: "আয় প্রাপ্ত", value: fmt(totalIncome), icon: ArrowUpRight, color: "text-emerald", onClick: () => navigate("/admin/payments") },
+    ];
+    if (canSeeProfit) {
+      cards.push({ label: "নিট লাভ", value: fmt(netProfit), icon: TrendingUp, color: netProfit >= 0 ? "text-emerald" : "text-destructive", onClick: () => navigate("/admin/accounting") });
+    }
+    cards.push(
+      { label: "ক্যাশ ব্যালেন্স", value: fmt(cashBank), icon: Wallet, color: "text-primary", onClick: () => navigate("/admin/accounting") },
+      { label: "মোট বুকিং", value: bookings.length, icon: Package, color: "text-foreground", onClick: () => navigate("/admin/bookings") },
+      { label: "মোট হাজী", value: totalHajji, icon: Users, color: "text-foreground", onClick: () => navigate("/admin/customers") },
+      { label: "কাস্টমার বকেয়া", value: fmt(customerDue), icon: UserCheck, color: customerDue > 0 ? "text-yellow-500" : "text-emerald", onClick: () => setShowDueCustomers(true) },
+    );
+    return cards;
+  }, [totalSales, totalIncome, netProfit, cashBank, bookings.length, totalHajji, customerDue, canSeeProfit, navigate]);
+
   return (
     <div className="space-y-5">
       {/* ═══ TOP KPI CARDS ═══ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        {[
-          { label: "মোট বিক্রয়", value: fmt(totalSales), icon: DollarSign, color: "text-primary", onClick: () => navigate("/admin/bookings") },
-          { label: "আয় প্রাপ্ত", value: fmt(totalIncome), icon: ArrowUpRight, color: "text-emerald", onClick: () => navigate("/admin/payments") },
-          { label: "নিট লাভ", value: fmt(netProfit), icon: TrendingUp, color: netProfit >= 0 ? "text-emerald" : "text-destructive", onClick: () => navigate("/admin/accounting") },
-          { label: "ক্যাশ ব্যালেন্স", value: fmt(cashBank), icon: Wallet, color: "text-primary", onClick: () => navigate("/admin/accounting") },
-          { label: "মোট বুকিং", value: bookings.length, icon: Package, color: "text-foreground", onClick: () => navigate("/admin/bookings") },
-          { label: "মোট হাজী", value: totalHajji, icon: Users, color: "text-foreground", onClick: () => navigate("/admin/customers") },
-          { label: "কাস্টমার বকেয়া", value: fmt(customerDue), icon: UserCheck, color: customerDue > 0 ? "text-yellow-500" : "text-emerald", onClick: () => setShowDueCustomers(true) },
-        ].map(k => (
+      <div className={`grid grid-cols-2 sm:grid-cols-4 ${canSeeProfit ? "lg:grid-cols-7" : "lg:grid-cols-6"} gap-3`}>
+        {kpiCards.map(k => (
           <div
             key={k.label}
             className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-colors"
@@ -139,20 +151,15 @@ const AdminDashboardCharts = ({
             <div className="flex justify-between cursor-pointer hover:bg-secondary/30 rounded px-1 -mx-1 py-0.5 transition-colors" onClick={() => navigate("/admin/supplier-agents")}>
               <span className="text-muted-foreground">সাপ্লায়ার বকেয়া</span><span className="font-bold text-destructive">{fmt(supplierDue)}</span>
             </div>
-            <div className="flex justify-between cursor-pointer hover:bg-secondary/30 rounded px-1 -mx-1 py-0.5 transition-colors" onClick={() => navigate("/admin/moallems")}>
-              <span className="text-muted-foreground">কমিশন বকেয়া</span><span className="font-bold text-destructive">{fmt(commissionDue)}</span>
+            {canSeeProfit && (
+              <div className="flex justify-between cursor-pointer hover:bg-secondary/30 rounded px-1 -mx-1 py-0.5 transition-colors" onClick={() => navigate("/admin/moallems")}>
+                <span className="text-muted-foreground">কমিশন বকেয়া</span><span className="font-bold text-destructive">{fmt(commissionDue)}</span>
+              </div>
+            )}
+            <div className="border-t border-border pt-2 flex justify-between font-bold">
+              <span>মোট</span>
+              <span className="text-destructive">{fmt(supplierDue + (canSeeProfit ? commissionDue : 0))}</span>
             </div>
-            <div className="border-t border-border pt-2 flex justify-between font-bold"><span>মোট</span><span className="text-destructive">{fmt(supplierDue + commissionDue)}</span></div>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-            <ArrowDownRight className="h-4 w-4 text-destructive" /> প্রদেয় (Payable)
-          </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">সাপ্লায়ার বকেয়া</span><span className="font-bold text-destructive">{fmt(supplierDue)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">কমিশন বকেয়া</span><span className="font-bold text-destructive">{fmt(commissionDue)}</span></div>
-            <div className="border-t border-border pt-2 flex justify-between font-bold"><span>মোট</span><span className="text-destructive">{fmt(supplierDue + commissionDue)}</span></div>
           </div>
         </div>
       </div>
@@ -160,7 +167,7 @@ const AdminDashboardCharts = ({
       {/* ═══ MONTHLY CHART ═══ */}
       <div className="bg-card border border-border rounded-xl p-5">
         <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-          <TrendingUp className="h-4 w-4 text-primary" /> মাসিক বিক্রয় ও লাভ
+          <TrendingUp className="h-4 w-4 text-primary" /> মাসিক বিক্রয় {canSeeProfit && "ও লাভ"}
         </h3>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
@@ -170,7 +177,7 @@ const AdminDashboardCharts = ({
               <YAxis tick={{ fontSize: 10, fill: "hsl(220, 10%, 55%)" }} axisLine={false} tickLine={false} tickFormatter={v => `৳${(v / 1000).toFixed(0)}k`} />
               <Tooltip contentStyle={ttStyle} formatter={(v: number) => fmt(v)} />
               <Bar dataKey="revenue" fill="hsl(40, 65%, 48%)" radius={[4, 4, 0, 0]} name="বিক্রয়" />
-              <Bar dataKey="profit" fill="hsl(160, 50%, 40%)" radius={[4, 4, 0, 0]} name="লাভ" />
+              {canSeeProfit && <Bar dataKey="profit" fill="hsl(160, 50%, 40%)" radius={[4, 4, 0, 0]} name="লাভ" />}
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -239,16 +246,12 @@ const AdminDashboardCharts = ({
               <span className="text-sm font-normal text-muted-foreground ml-2">({dueCustomers.length} জন)</span>
             </DialogTitle>
           </DialogHeader>
-
           {dueCustomers.length > 0 ? (
             <div className="space-y-2 mt-2">
-              {/* Summary */}
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-center justify-between">
                 <span className="text-sm font-medium">মোট বকেয়া</span>
                 <span className="text-lg font-bold text-destructive">{fmt(customerDue)}</span>
               </div>
-
-              {/* Customer list */}
               {dueCustomers.map((c, i) => (
                 <div key={i} className="bg-secondary/30 border border-border rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
@@ -261,7 +264,6 @@ const AdminDashboardCharts = ({
                       <p className="text-[10px] text-muted-foreground">{c.bookingCount}টি বুকিং</p>
                     </div>
                   </div>
-                  {/* Booking breakdown */}
                   <div className="space-y-1 mt-2 border-t border-border pt-2">
                     {c.bookings.map((b: any) => (
                       <div key={b.id} className="flex items-center justify-between text-xs">
