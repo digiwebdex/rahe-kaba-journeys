@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import logoImg from "@/assets/logo.jpg";
+import logoImg from "@/assets/logo-nobg.png";
 import { CompanyInfo } from "./invoiceGenerator";
 import { getSignatureData, SignatureData } from "./pdfSignature";
 import { generateTrackingQr, addQrToDoc, addPaymentWatermark, getWatermarkStatus } from "./pdfQrCode";
@@ -29,7 +29,7 @@ function loadLogoBase64(): Promise<string> {
 function addHeader(doc: jsPDF, company: CompanyInfo, logoBase64: string) {
   const pageWidth = doc.internal.pageSize.getWidth();
   if (logoBase64) {
-    try { doc.addImage(logoBase64, "JPEG", 14, 10, 20, 20); } catch { /* skip */ }
+    try { doc.addImage(logoBase64, "PNG", 14, 12, 16, 16); } catch { /* skip */ }
   }
   const textX = logoBase64 ? 38 : 14;
   doc.setFontSize(18);
