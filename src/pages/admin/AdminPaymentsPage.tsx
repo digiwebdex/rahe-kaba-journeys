@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Edit2, Trash2, Save, X, Plus, Wallet, Search, CheckCircle, XCircle, Upload, FileText, Loader2, FileDown, FileSpreadsheet } from "lucide-react";
+import { Download, Edit2, Trash2, Save, X, Plus, Wallet, Search, CheckCircle, XCircle, Upload, FileText, Loader2, FileDown, FileSpreadsheet, ChevronDown, ChevronRight } from "lucide-react";
 import { exportPDF, exportExcel } from "@/lib/reportExport";
 import { generateReceipt, CompanyInfo, InvoicePayment } from "@/lib/invoiceGenerator";
 import { getCompanyInfoForPdf } from "@/lib/entityPdfGenerator";
@@ -59,7 +59,8 @@ export default function AdminPaymentsPage() {
   const [markPaidId, setMarkPaidId] = useState<string | null>(null);
   const [markPaidWallet, setMarkPaidWallet] = useState("");
   const [viewPayment, setViewPayment] = useState<any>(null);
-
+  const [expandedMoallemId, setExpandedMoallemId] = useState<string | null>(null);
+  const [expandedSupplierId, setExpandedSupplierId] = useState<string | null>(null);
   const fetchPayments = async () => {
     const [payRes, moallemPayRes, supplierPayRes, walletRes, profileRes] = await Promise.all([
       supabase.from("payments").select("*, bookings(tracking_id, total_amount, paid_amount, due_amount, guest_name, guest_passport, num_travelers, status, packages(name, type, duration_days))").order("created_at", { ascending: false }),
@@ -354,7 +355,32 @@ export default function AdminPaymentsPage() {
     return { label: "Customer", cls: "bg-primary/10 text-primary" };
   };
 
-  const totalAll = payments.length + moallemPayments.length + supplierPayments.length;
+  // Grouped moallem payments
+  const groupedMoallems = useMemo(() => {
+    const map: Record<string, { name: string; phone: string; totalPaid: number; payments: any[] }> = {};
+    moallemPayments.forEach((p: any) => {
+      const mid = p.moallem_id;
+      if (!map[mid]) map[mid] = { name: p.moallems?.name || "—", phone: p.moallems?.phone || "", totalPaid: 0, payments: [] };
+      map[mid].totalPaid += Number(p.amount || 0);
+      map[mid].payments.push(p);
+    });
+    // Sort payments within each group
+    Object.values(map).forEach(g => g.payments.sort((a: any, b: any) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime()));
+    return map;
+  }, [moallemPayments]);
+
+  // Grouped supplier payments
+  const groupedSuppliers = useMemo(() => {
+    const map: Record<string, { name: string; company: string; totalPaid: number; payments: any[] }> = {};
+    supplierPayments.forEach((p: any) => {
+      const sid = p.supplier_agent_id;
+      if (!map[sid]) map[sid] = { name: p.supplier_agents?.agent_name || "—", company: p.supplier_agents?.company_name || "", totalPaid: 0, payments: [] };
+      map[sid].totalPaid += Number(p.amount || 0);
+      map[sid].payments.push(p);
+    });
+    Object.values(map).forEach(g => g.payments.sort((a: any, b: any) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime()));
+    return map;
+  }, [supplierPayments]);
 
   return (
     <div>
@@ -400,7 +426,7 @@ export default function AdminPaymentsPage() {
       {/* View tabs */}
       <div className="flex gap-1 mb-4 border-b border-border overflow-x-auto">
         {[
-          { key: "all" as const, label: `All (${totalAll})` },
+          { key: "all" as const, label: `All (${payments.length + moallemPayments.length + supplierPayments.length})` },
           { key: "customer" as const, label: `Customer (${payments.length})` },
           { key: "moallem" as const, label: `Moallem (${moallemPayments.length})` },
           { key: "supplier" as const, label: `Supplier (${supplierPayments.length})` },
@@ -412,6 +438,144 @@ export default function AdminPaymentsPage() {
         ))}
       </div>
 
+      {/* Grouped Moallem View */}
+      {viewTab === "moallem" && (
+        <div className="space-y-2">
+          {Object.entries(groupedMoallems).length === 0 && <p className="text-center text-muted-foreground py-12">No moallem payments found.</p>}
+          {Object.entries(groupedMoallems).map(([mid, group]) => (
+            <div key={mid} className="bg-card border border-border rounded-xl overflow-hidden">
+              {/* Moallem Header Row */}
+              <div
+                className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() => setExpandedMoallemId(expandedMoallemId === mid ? null : mid)}
+              >
+                <div className="flex items-center gap-3">
+                  {expandedMoallemId === mid ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                  <div>
+                    <p className="font-medium text-foreground">{group.name}</p>
+                    {group.phone && <p className="text-xs text-muted-foreground">{group.phone}</p>}
+                  </div>
+                  <span className="text-xs bg-accent/20 text-accent-foreground px-2 py-0.5 rounded-full">{group.payments.length} payments</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-heading font-bold text-primary">{fmt(group.totalPaid)}</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); exportPDF({ title: `Moallem Payment History - ${group.name}`, columns: ["#", "Booking", "Amount", "Method", "Date", "Notes"], rows: group.payments.map((p: any, i: number) => [i + 1, p.bookings?.tracking_id || "—", Number(p.amount), p.payment_method || "—", p.date ? new Date(p.date).toLocaleDateString() : "—", p.notes || "—"]), summary: [`Total Paid: ৳${group.totalPaid.toLocaleString()}`] }); }}
+                    className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
+                  >
+                    <FileDown className="h-3.5 w-3.5" /> PDF
+                  </button>
+                </div>
+              </div>
+              {/* Expanded Transactions */}
+              {expandedMoallemId === mid && (
+                <div className="border-t border-border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50 text-left text-muted-foreground bg-muted/20">
+                        <th className="py-2 px-4">#</th>
+                        <th className="py-2 px-4">Booking</th>
+                        <th className="py-2 px-4">Amount</th>
+                        <th className="py-2 px-4">Method</th>
+                        <th className="py-2 px-4">Date</th>
+                        <th className="py-2 px-4">Notes</th>
+                        <th className="py-2 px-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.payments.map((p: any, i: number) => (
+                        <tr key={p.id} className="border-b border-border/30 hover:bg-secondary/20">
+                          <td className="py-2.5 px-4 text-xs text-muted-foreground">{i + 1}</td>
+                          <td className="py-2.5 px-4 font-mono text-xs">{p.bookings?.tracking_id || "—"}</td>
+                          <td className="py-2.5 px-4 font-medium">{fmt(p.amount)}</td>
+                          <td className="py-2.5 px-4 capitalize text-xs">{p.payment_method || "—"}</td>
+                          <td className="py-2.5 px-4 text-xs">{p.date ? new Date(p.date).toLocaleDateString() : "—"}</td>
+                          <td className="py-2.5 px-4 text-xs text-muted-foreground truncate max-w-[150px]">{p.notes || "—"}</td>
+                          <td className="py-2.5 px-4" onClick={(e) => e.stopPropagation()}>
+                            <AdminActionMenu inlineCount={0} actions={[
+                              { label: "Delete", icon: <Trash2 className="h-3.5 w-3.5" />, onClick: () => { setDeleteId(p.id); setDeleteType("moallem"); }, variant: "destructive", hidden: !canModify },
+                            ]} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Grouped Supplier View */}
+      {viewTab === "supplier" && (
+        <div className="space-y-2">
+          {Object.entries(groupedSuppliers).length === 0 && <p className="text-center text-muted-foreground py-12">No supplier payments found.</p>}
+          {Object.entries(groupedSuppliers).map(([sid, group]) => (
+            <div key={sid} className="bg-card border border-border rounded-xl overflow-hidden">
+              <div
+                className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() => setExpandedSupplierId(expandedSupplierId === sid ? null : sid)}
+              >
+                <div className="flex items-center gap-3">
+                  {expandedSupplierId === sid ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                  <div>
+                    <p className="font-medium text-foreground">{group.name}</p>
+                    {group.company && <p className="text-xs text-muted-foreground">{group.company}</p>}
+                  </div>
+                  <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">{group.payments.length} payments</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-heading font-bold text-destructive">{fmt(group.totalPaid)}</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); exportPDF({ title: `Supplier Payment History - ${group.name}`, columns: ["#", "Booking", "Amount", "Method", "Date", "Notes"], rows: group.payments.map((p: any, i: number) => [i + 1, p.bookings?.tracking_id || "—", Number(p.amount), p.payment_method || "—", p.date ? new Date(p.date).toLocaleDateString() : "—", p.notes || "—"]), summary: [`Total Paid: ৳${group.totalPaid.toLocaleString()}`] }); }}
+                    className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
+                  >
+                    <FileDown className="h-3.5 w-3.5" /> PDF
+                  </button>
+                </div>
+              </div>
+              {expandedSupplierId === sid && (
+                <div className="border-t border-border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50 text-left text-muted-foreground bg-muted/20">
+                        <th className="py-2 px-4">#</th>
+                        <th className="py-2 px-4">Booking</th>
+                        <th className="py-2 px-4">Amount</th>
+                        <th className="py-2 px-4">Method</th>
+                        <th className="py-2 px-4">Date</th>
+                        <th className="py-2 px-4">Notes</th>
+                        <th className="py-2 px-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.payments.map((p: any, i: number) => (
+                        <tr key={p.id} className="border-b border-border/30 hover:bg-secondary/20">
+                          <td className="py-2.5 px-4 text-xs text-muted-foreground">{i + 1}</td>
+                          <td className="py-2.5 px-4 font-mono text-xs">{p.bookings?.tracking_id || "—"}</td>
+                          <td className="py-2.5 px-4 font-medium">{fmt(p.amount)}</td>
+                          <td className="py-2.5 px-4 capitalize text-xs">{p.payment_method || "—"}</td>
+                          <td className="py-2.5 px-4 text-xs">{p.date ? new Date(p.date).toLocaleDateString() : "—"}</td>
+                          <td className="py-2.5 px-4 text-xs text-muted-foreground truncate max-w-[150px]">{p.notes || "—"}</td>
+                          <td className="py-2.5 px-4" onClick={(e) => e.stopPropagation()}>
+                            <AdminActionMenu inlineCount={0} actions={[
+                              { label: "Delete", icon: <Trash2 className="h-3.5 w-3.5" />, onClick: () => { setDeleteId(p.id); setDeleteType("supplier"); }, variant: "destructive", hidden: !canModify },
+                            ]} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Flat table for All and Customer tabs */}
+      {(viewTab === "all" || viewTab === "customer") && (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -526,7 +690,8 @@ export default function AdminPaymentsPage() {
           </tbody>
         </table>
       </div>
-      {allCombined.length === 0 && <p className="text-center text-muted-foreground py-12">No payments found.</p>}
+      )}
+      {(viewTab === "all" || viewTab === "customer") && allCombined.length === 0 && <p className="text-center text-muted-foreground py-12">No payments found.</p>}
 
       {/* Add Payment Modal */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
