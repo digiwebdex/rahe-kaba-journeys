@@ -2,38 +2,41 @@
 
 ## Analysis
 
-The user wants to show **individual payment history with dates** for each booking — specifically when a customer paid and how much on each date, displayed separately (e.g., "19/02/2026 — ৳200,000" and "03/03/2026 — ৳300,000").
+Currently, "মোট প্রাপ্ত" and "মোট বকেয়া" are calculated from **booking-level** data (`paid_by_moallem`, `moallem_due`). The user wants these to be based on the **contracted_amount** instead:
 
-The `BookingDetail` component (lines 23-136) already shows an "Installment History" table with columns: #, Amount, Method, Due Date, Paid Date, Status. This data comes from the `payments` table.
+- **মোট বকেয়া** = `contracted_amount` - total payments received from moallem
+- **মোট প্রাপ্ত** = total payments received from moallem (sum of `moallem_payments`)
 
-However, the issue is that payment dates (`paid_at`) may not be consistently populated, and the display is inside an expandable section that requires clicking "View Details."
+As the moallem pays installments, বকেয়া decreases and প্রাপ্ত increases.
 
 ## Plan
 
-### 1. Enhance payment history display in BookingDetail
+### 1. Update AdminMoallemsPage.tsx (list page)
 
-- Add a **"Payment Timeline"** section in `BookingDetail` that shows only **completed** payments in a clean, date-focused format:
-  - Each entry: date (formatted as DD/MM/YYYY) + amount + payment method
-  - Sorted by `paid_at` ascending
-  - Visually distinct with a timeline/list style showing chronological payments
+Change the stats calculation logic:
+- Instead of using `bookings.paid_by_moallem` and `bookings.moallem_due`, compute:
+  - `received` = `moallem.total_deposit` (already maintained by DB trigger from moallem_payments)
+  - `due` = `moallem.contracted_amount - moallem.total_deposit`
+- Update KPI summary cards and table columns to use this new formula
+- No need to fetch bookings for these stats anymore; the moallems table already has `total_deposit`
 
-### 2. Add payment summary to booking card (main view)
+### 2. Update AdminMoallemProfilePage.tsx (profile page)
 
-- On each booking card in the main list (lines 443-451), add a small **payment breakdown** below the existing financial grid
-- Show completed payments as compact chips/badges: `19/02/2026: ৳200,000` | `03/03/2026: ৳300,000`
-- This requires fetching payments alongside bookings
+Change KPI computation:
+- `totalPaid` = sum of moallem_payments (already correct)
+- `totalMoallemDue` = `moallem.contracted_amount - totalPaid` (instead of sum of `bookings.moallem_due`)
+- Keep `totalSelling` as `contracted_amount` (the contract value, not booking totals)
 
-### 3. Data fetching changes
+### 3. Update Reports page (moallem tab)
 
-- In `AdminBookingsPage`, fetch payments for all bookings in a single query and group by `booking_id`
-- Pass payment data to each booking card for inline display
-- No database changes needed — `payments` table already has `paid_at`, `amount`, `status`
+Ensure the moallem report rows use `contracted_amount` as the base for due/received calculations.
 
 ### Technical Details
 
 **Files to modify:**
-- `src/pages/admin/AdminBookingsPage.tsx`
-  - Add `payments` state and fetch all completed payments grouped by booking_id
-  - Add compact payment date list on each booking card
-  - Enhance `BookingDetail` to show a clear "Payment Timeline" with dates
+- `src/pages/admin/AdminMoallemsPage.tsx` — Change `moallemStats` to use `contracted_amount - total_deposit` for due, `total_deposit` for received directly from moallems table
+- `src/pages/admin/AdminMoallemProfilePage.tsx` — Change `totalMoallemDue` to `contracted_amount - totalPaid`, change `totalSelling` to `contracted_amount`
+- `src/pages/admin/AdminReportsPage.tsx` — Update moallem report rows if they use booking-level stats
+
+No database changes needed — `moallems.total_deposit` and `moallems.contracted_amount` columns already exist and are maintained by triggers.
 
