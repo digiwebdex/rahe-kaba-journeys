@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Download, Edit2, Trash2, Save, X, Plus, Wallet, Search, CheckCircle, XCircle } from "lucide-react";
+import { Download, Edit2, Trash2, Save, X, Plus, Wallet, Search, CheckCircle, XCircle, Upload, FileText, Loader2 } from "lucide-react";
 import { generateReceipt, CompanyInfo, InvoicePayment } from "@/lib/invoiceGenerator";
 import { getCompanyInfoForPdf } from "@/lib/entityPdfGenerator";
 import { useIsViewer, useCanModifyFinancials } from "@/components/admin/AdminLayout";
@@ -53,6 +53,8 @@ export default function AdminPaymentsPage() {
   });
   const [addLoading, setAddLoading] = useState(false);
   const [selectedBookingInfo, setSelectedBookingInfo] = useState<any>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptUploading, setReceiptUploading] = useState(false);
   const [markPaidId, setMarkPaidId] = useState<string | null>(null);
   const [markPaidWallet, setMarkPaidWallet] = useState("");
   const [viewPayment, setViewPayment] = useState<any>(null);
@@ -103,6 +105,16 @@ export default function AdminPaymentsPage() {
     setAddForm({ customer_id: "", booking_id: "", amount: "", payment_method: "cash", transaction_id: "", paid_date: new Date().toISOString().split("T")[0], notes: "", wallet_account_id: "", moallem_id: "", supplier_id: "" });
     setSelectedBookingInfo(null);
     setBookingSearch("");
+    setReceiptFile(null);
+  };
+
+  const uploadReceiptFile = async (paymentId: string): Promise<string | null> => {
+    if (!receiptFile) return null;
+    const ext = receiptFile.name.split(".").pop();
+    const path = `${paymentType}/${paymentId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("payment-receipts").upload(path, receiptFile, { upsert: true });
+    if (error) { toast.error("রিসিট আপলোড ব্যর্থ: " + error.message); return null; }
+    return path;
   };
 
   const handlePaymentTypeChange = (type: PaymentType) => {
@@ -170,6 +182,8 @@ export default function AdminPaymentsPage() {
         const maxInstallment = payments
           .filter((p) => p.booking_id === addForm.booking_id)
           .reduce((max, p) => Math.max(max, p.installment_number || 0), 0);
+        const tempId = crypto.randomUUID();
+        const receiptPath = await uploadReceiptFile(tempId);
         const { error } = await supabase.from("payments").insert({
           booking_id: addForm.booking_id, user_id: userId,
           customer_id: addForm.customer_id || null, amount: parseFloat(addForm.amount),
@@ -177,6 +191,7 @@ export default function AdminPaymentsPage() {
           status: "completed", paid_at: new Date(addForm.paid_date).toISOString(),
           due_date: addForm.paid_date, installment_number: maxInstallment + 1,
           notes: addForm.notes.trim() || null, wallet_account_id: addForm.wallet_account_id || null,
+          receipt_file_path: receiptPath,
         } as any);
         if (error) throw error;
         toast.success("Payment added successfully");
@@ -189,6 +204,8 @@ export default function AdminPaymentsPage() {
       setAddLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        const tempId = crypto.randomUUID();
+        const receiptPath = await uploadReceiptFile(tempId);
         const { error } = await supabase.from("moallem_payments").insert({
           moallem_id: addForm.moallem_id,
           booking_id: addForm.booking_id || null,
@@ -198,6 +215,7 @@ export default function AdminPaymentsPage() {
           notes: addForm.notes.trim() || null,
           wallet_account_id: addForm.wallet_account_id || null,
           recorded_by: session?.user?.id || null,
+          receipt_file_path: receiptPath,
         });
         if (error) throw error;
         toast.success("Moallem payment added successfully");
@@ -210,6 +228,8 @@ export default function AdminPaymentsPage() {
       setAddLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        const tempId = crypto.randomUUID();
+        const receiptPath = await uploadReceiptFile(tempId);
         const { error } = await supabase.from("supplier_agent_payments").insert({
           supplier_agent_id: addForm.supplier_id,
           booking_id: addForm.booking_id || null,
@@ -219,6 +239,7 @@ export default function AdminPaymentsPage() {
           notes: addForm.notes.trim() || null,
           wallet_account_id: addForm.wallet_account_id || null,
           recorded_by: session?.user?.id || null,
+          receipt_file_path: receiptPath,
         });
         if (error) throw error;
         toast.success("Supplier payment added successfully");
@@ -644,6 +665,29 @@ export default function AdminPaymentsPage() {
               </div>
             )}
             <div>
+              <label className="text-xs text-muted-foreground block mb-1">রিসিট ফাইল (ঐচ্ছিক)</label>
+              {receiptFile ? (
+                <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-2.5 border border-border">
+                  <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="text-xs truncate flex-1">{receiptFile.name}</span>
+                  <button type="button" onClick={() => setReceiptFile(null)} className="text-muted-foreground hover:text-destructive">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 cursor-pointer w-full border-2 border-dashed border-border rounded-lg p-3 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors">
+                  <Upload className="h-4 w-4" />
+                  <span className="text-xs">রিসিট আপলোড করুন (ছবি/PDF, সর্বোচ্চ 5MB)</span>
+                  <input type="file" accept="image/*,.pdf" className="hidden" onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f && f.size > 5 * 1024 * 1024) { toast.error("ফাইল 5MB এর কম হতে হবে"); return; }
+                    if (f) setReceiptFile(f);
+                    e.target.value = "";
+                  }} />
+                </label>
+              )}
+            </div>
+            <div>
               <label className="text-xs text-muted-foreground block mb-1">নোট</label>
               <textarea className={inputClass + " resize-none"} rows={2} value={addForm.notes} onChange={(e) => setAddForm({ ...addForm, notes: e.target.value })} placeholder="অতিরিক্ত তথ্য..." maxLength={500} />
             </div>
@@ -728,6 +772,22 @@ export default function AdminPaymentsPage() {
                     <div><span className="text-muted-foreground text-xs block">সাপ্লায়ার পেইড</span><span className="font-bold text-emerald">{fmt(Number(viewPayment.bookings.paid_to_supplier || 0))}</span></div>
                     <div><span className="text-muted-foreground text-xs block">সাপ্লায়ার বকেয়া</span><span className="font-bold text-destructive">{fmt(Number(viewPayment.bookings.supplier_due || 0))}</span></div>
                   </div>
+                </div>
+              )}
+              {viewPayment.receipt_file_path && (
+                <div className="border-t border-border/50 pt-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">রিসিট ফাইল</h4>
+                  <button
+                    onClick={async () => {
+                      const { data } = await supabase.storage.from("payment-receipts").createSignedUrl(viewPayment.receipt_file_path, 300);
+                      if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                      else toast.error("ফাইল লোড করা যায়নি");
+                    }}
+                    className="flex items-center gap-2 text-xs text-primary hover:underline"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    রিসিট দেখুন / ডাউনলোড
+                  </button>
                 </div>
               )}
               {viewPayment.notes && (

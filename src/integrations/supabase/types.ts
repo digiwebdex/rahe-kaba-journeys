@@ -765,6 +765,7 @@ export type Database = {
           moallem_id: string
           notes: string | null
           payment_method: string | null
+          receipt_file_path: string | null
           recorded_by: string | null
           wallet_account_id: string | null
         }
@@ -777,6 +778,7 @@ export type Database = {
           moallem_id: string
           notes?: string | null
           payment_method?: string | null
+          receipt_file_path?: string | null
           recorded_by?: string | null
           wallet_account_id?: string | null
         }
@@ -789,6 +791,7 @@ export type Database = {
           moallem_id?: string
           notes?: string | null
           payment_method?: string | null
+          receipt_file_path?: string | null
           recorded_by?: string | null
           wallet_account_id?: string | null
         }
@@ -1073,6 +1076,7 @@ export type Database = {
           notes: string | null
           paid_at: string | null
           payment_method: string | null
+          receipt_file_path: string | null
           status: string
           transaction_id: string | null
           user_id: string
@@ -1089,6 +1093,7 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          receipt_file_path?: string | null
           status?: string
           transaction_id?: string | null
           user_id: string
@@ -1105,6 +1110,7 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          receipt_file_path?: string | null
           status?: string
           transaction_id?: string | null
           user_id?: string
@@ -1218,6 +1224,7 @@ export type Database = {
           id: string
           notes: string | null
           payment_method: string | null
+          receipt_file_path: string | null
           recorded_by: string | null
           supplier_agent_id: string
           wallet_account_id: string | null
@@ -1230,6 +1237,7 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: string | null
+          receipt_file_path?: string | null
           recorded_by?: string | null
           supplier_agent_id: string
           wallet_account_id?: string | null
@@ -1242,6 +1250,7 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: string | null
+          receipt_file_path?: string | null
           recorded_by?: string | null
           supplier_agent_id?: string
           wallet_account_id?: string | null
