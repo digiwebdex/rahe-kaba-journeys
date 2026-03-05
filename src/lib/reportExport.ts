@@ -6,6 +6,7 @@ interface ReportData {
   title: string;
   columns: string[];
   rows: (string | number)[][];
+  summary?: string[];
 }
 
 export interface HajjiReportData {
@@ -32,7 +33,7 @@ export interface HajjiReportData {
   }[];
 }
 
-export function exportPDF({ title, columns, rows }: ReportData) {
+export function exportPDF({ title, columns, rows, summary }: ReportData) {
   const doc = new jsPDF();
   doc.setFontSize(16);
   doc.text(title, 14, 18);
@@ -46,6 +47,23 @@ export function exportPDF({ title, columns, rows }: ReportData) {
     styles: { fontSize: 8 },
     headStyles: { fillColor: [40, 46, 56] },
   });
+
+  // Summary footer
+  if (summary && summary.length > 0) {
+    let y = (doc as any).lastAutoTable?.finalY + 10 || 50;
+    if (y > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); y = 20; }
+    doc.setFillColor(40, 46, 56);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    doc.rect(14, y, pageWidth - 28, 8 * summary.length + 6, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    summary.forEach((line, i) => {
+      doc.text(line, 18, y + 7 + i * 8);
+    });
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "normal");
+  }
 
   doc.save(`${title.replace(/\s+/g, "_")}.pdf`);
 }
@@ -169,8 +187,12 @@ export function exportHajjiExcel({ title, customers }: HajjiReportData) {
   XLSX.writeFile(wb, `${title.replace(/\s+/g, "_")}.xlsx`);
 }
 
-export function exportExcel({ title, columns, rows }: ReportData) {
+export function exportExcel({ title, columns, rows, summary }: ReportData) {
   const wsData = [columns, ...rows];
+  if (summary && summary.length > 0) {
+    wsData.push([]);
+    summary.forEach(line => wsData.push([line]));
+  }
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, title.slice(0, 31));

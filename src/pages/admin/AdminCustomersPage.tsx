@@ -72,27 +72,29 @@ export default function AdminCustomersPage() {
 
   // Per-customer stats
   const customerStats = useMemo(() => {
-    const map: Record<string, { totalAmount: number; totalPaid: number; totalDue: number; bookingCount: number }> = {};
+    const map: Record<string, { totalAmount: number; totalPaid: number; totalDue: number; bookingCount: number; travelers: number }> = {};
     bookings.forEach(b => {
       if (!b.user_id) return;
-      if (!map[b.user_id]) map[b.user_id] = { totalAmount: 0, totalPaid: 0, totalDue: 0, bookingCount: 0 };
+      if (!map[b.user_id]) map[b.user_id] = { totalAmount: 0, totalPaid: 0, totalDue: 0, bookingCount: 0, travelers: 0 };
       map[b.user_id].totalAmount += Number(b.total_amount || 0);
       map[b.user_id].totalPaid += Number(b.paid_amount || 0);
       map[b.user_id].totalDue += Number(b.due_amount || 0);
       map[b.user_id].bookingCount++;
+      map[b.user_id].travelers += Number(b.num_travelers || 1);
     });
     return map;
   }, [bookings]);
 
   // KPI totals
   const totals = useMemo(() => {
-    let totalAmount = 0, totalPaid = 0, totalDue = 0;
+    let totalAmount = 0, totalPaid = 0, totalDue = 0, totalTravelers = 0;
     Object.values(customerStats).forEach(s => {
       totalAmount += s.totalAmount;
       totalPaid += s.totalPaid;
       totalDue += s.totalDue;
+      totalTravelers += s.travelers;
     });
-    return { totalAmount, totalPaid, totalDue };
+    return { totalAmount, totalPaid, totalDue, totalTravelers };
   }, [customerStats]);
 
   const startEdit = (c: any) => {
@@ -194,8 +196,8 @@ export default function AdminCustomersPage() {
           <p className="text-muted-foreground text-sm">মোট {customers.length} জন কাস্টমার</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportPDF({ title: "Customers Report", columns: ["Name", "Phone", "Passport", "Total Amount", "Total Paid", "Total Due"], rows: filtered.map(c => { const s = customerStats[c.user_id] || { totalAmount: 0, totalPaid: 0, totalDue: 0 }; return [c.full_name || "—", c.phone || "—", c.passport_number || "—", s.totalAmount, s.totalPaid, s.totalDue]; }) })}><FileDown className="h-4 w-4 mr-1" />PDF</Button>
-          <Button variant="outline" size="sm" onClick={() => exportExcel({ title: "Customers Report", columns: ["Name", "Phone", "Passport", "Total Amount", "Total Paid", "Total Due"], rows: filtered.map(c => { const s = customerStats[c.user_id] || { totalAmount: 0, totalPaid: 0, totalDue: 0 }; return [c.full_name || "—", c.phone || "—", c.passport_number || "—", s.totalAmount, s.totalPaid, s.totalDue]; }) })}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+          <Button variant="outline" size="sm" onClick={() => { const rows = filtered.map(c => { const s = customerStats[c.user_id] || { totalAmount: 0, totalPaid: 0, totalDue: 0, travelers: 0 }; return [c.full_name || "—", c.phone || "—", s.travelers, s.totalAmount, s.totalPaid, s.totalDue]; }); const sumPaid = rows.reduce((a, r) => a + Number(r[4]), 0); const sumDue = rows.reduce((a, r) => a + Number(r[5]), 0); exportPDF({ title: "Customers Report", columns: ["Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"], rows, summary: [`Total Paid: ৳${sumPaid.toLocaleString()}`, `Total Due: ৳${sumDue.toLocaleString()}`] }); }}><FileDown className="h-4 w-4 mr-1" />PDF</Button>
+          <Button variant="outline" size="sm" onClick={() => { const rows = filtered.map(c => { const s = customerStats[c.user_id] || { totalAmount: 0, totalPaid: 0, totalDue: 0, travelers: 0 }; return [c.full_name || "—", c.phone || "—", s.travelers, s.totalAmount, s.totalPaid, s.totalDue]; }); const sumPaid = rows.reduce((a, r) => a + Number(r[4]), 0); const sumDue = rows.reduce((a, r) => a + Number(r[5]), 0); exportExcel({ title: "Customers Report", columns: ["Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"], rows, summary: [`Total Paid: ৳${sumPaid.toLocaleString()}`, `Total Due: ৳${sumDue.toLocaleString()}`] }); }}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
           {!isViewer && (
             <Button onClick={() => setShowAddModal(true)}>
               <Plus className="h-4 w-4 mr-1" /> নতুন কাস্টমার
@@ -205,13 +207,17 @@ export default function AdminCustomersPage() {
       </div>
 
       {/* KPI Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-[11px] text-muted-foreground uppercase tracking-wider">মোট কাস্টমার</p>
           <p className="text-lg font-bold text-foreground">{customers.length}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">মোট টাকা</p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">চুক্তিকৃত হাজী</p>
+          <p className="text-lg font-bold text-foreground">{totals.totalTravelers}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wider">চুক্তিকৃত টাকা</p>
           <p className="text-lg font-bold text-foreground">{fmt(totals.totalAmount)}</p>
         </div>
         <div className="bg-card border border-border rounded-xl p-4">
@@ -240,35 +246,29 @@ export default function AdminCustomersPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/40">
+               <TableRow className="bg-muted/40">
                   <TableHead className="w-12 text-center">SL</TableHead>
                   <TableHead>নাম</TableHead>
                   <TableHead>ফোন</TableHead>
-                  <TableHead>পাসপোর্ট</TableHead>
-                  <TableHead className="text-right">মোট টাকা</TableHead>
+                  <TableHead className="text-right">চুক্তিকৃত হাজী</TableHead>
+                  <TableHead className="text-right">চুক্তিকৃত টাকা</TableHead>
                   <TableHead className="text-right">মোট প্রাপ্ত</TableHead>
                   <TableHead className="text-right">মোট বকেয়া</TableHead>
-                  <TableHead className="text-center">স্ট্যাটাস</TableHead>
                   <TableHead className="text-center w-24">অ্যাকশন</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginated.map((c, i) => {
-                  const stats = customerStats[c.user_id] || { totalAmount: 0, totalPaid: 0, totalDue: 0, bookingCount: 0 };
+                  const stats = customerStats[c.user_id] || { totalAmount: 0, totalPaid: 0, totalDue: 0, bookingCount: 0, travelers: 0 };
                   return (
                     <TableRow key={c.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedCustomer(c)}>
                       <TableCell className="text-center text-muted-foreground text-xs">{(page - 1) * PAGE_SIZE + i + 1}</TableCell>
                       <TableCell className="font-medium">{c.full_name || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{c.passport_number || "—"}</TableCell>
+                      <TableCell className="text-right font-medium">{stats.travelers}</TableCell>
                       <TableCell className="text-right font-medium">{fmt(stats.totalAmount)}</TableCell>
                       <TableCell className="text-right font-medium text-emerald-600">{fmt(stats.totalPaid)}</TableCell>
                       <TableCell className="text-right font-medium text-destructive">{fmt(stats.totalDue)}</TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={stats.totalDue > 0 ? "destructive" : "default"} className="text-[10px]">
-                          {stats.totalDue > 0 ? "বকেয়া" : "ক্লিয়ার"}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-center" onClick={e => e.stopPropagation()}>
                         <AdminActionMenu actions={getActions(c)} inlineCount={1} />
                       </TableCell>

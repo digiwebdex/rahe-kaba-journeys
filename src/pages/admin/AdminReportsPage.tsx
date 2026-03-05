@@ -364,6 +364,7 @@ export default function AdminReportsPage() {
   // ══════════════════════════════════════════════
   const handleExport = (type: "pdf" | "excel") => {
     let data: any;
+    const makeSummary = (paid: number, due: number) => [`Total Paid: ৳${paid.toLocaleString()}`, `Total Due: ৳${due.toLocaleString()}`];
     switch (activeTab) {
       case "financial": {
         const cols = canSeeProfit ? ["Month","Income","Expenses","Profit","Bookings"] : ["Month","Income","Expenses","Bookings"];
@@ -371,24 +372,36 @@ export default function AdminReportsPage() {
         data = { title: `Financial Summary - ${selectedYear}`, columns: cols, rows };
         break;
       }
-      case "customer":
-        data = { title: "Customer Report", columns: ["Customer","Phone","Bookings","Total Paid","Total Due","Status"], rows: customerRows.map((r: any) => [r.name, r.phone, r.totalBookings, r.totalPaid, r.totalDue, r.totalDue > 0 ? "Due" : "Clear"]) };
+      case "customer": {
+        const totalPaid = customerRows.reduce((s: number, r: any) => s + r.totalPaid, 0);
+        const totalDue = customerRows.reduce((s: number, r: any) => s + r.totalDue, 0);
+        data = { title: "Customer Report", columns: ["Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"], rows: customerRows.map((r: any) => [r.name, r.phone, r.travelers, r.totalAmount, r.totalPaid, r.totalDue]), summary: makeSummary(totalPaid, totalDue) };
         break;
+      }
       case "package": {
         const cols = canSeeProfit ? ["Package","Type","Total Hajji","Total Selling","Total Cost","Profit"] : ["Package","Type","Total Hajji","Total Selling","Total Cost"];
         const rows = packageRows.map((r: any) => canSeeProfit ? [r.name, r.type, r.totalHajji, r.totalSelling, r.totalCost, r.profit] : [r.name, r.type, r.totalHajji, r.totalSelling, r.totalCost]);
         data = { title: "Package Report", columns: cols, rows };
         break;
       }
-      case "moallem":
-        data = { title: "Moallem Report", columns: ["Moallem","Phone","Total Hajji","Total Sale","Total Received","Total Due"], rows: moallemRows.map((r: any) => [r.name, r.phone, r.totalHajji, r.totalSale, r.totalReceived, r.totalDue]) };
+      case "moallem": {
+        const totalPaid = moallemRows.reduce((s: number, r: any) => s + r.totalReceived, 0);
+        const totalDue = moallemRows.reduce((s: number, r: any) => s + r.totalDue, 0);
+        data = { title: "Moallem Report", columns: ["Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"], rows: moallemRows.map((r: any) => [r.name, r.phone, r.totalHajji, r.totalSale, r.totalReceived, r.totalDue]), summary: makeSummary(totalPaid, totalDue) };
         break;
-      case "supplier":
-        data = { title: "Supplier Agent Report", columns: ["Supplier","Company","Total Cost","Total Paid","Total Due","Bookings"], rows: supplierRows.map((r: any) => [r.name, r.company, r.totalCost, r.totalPaid, r.totalDue, r.bookingCount]) };
+      }
+      case "supplier": {
+        const totalPaid = supplierRows.reduce((s: number, r: any) => s + r.totalPaid, 0);
+        const totalDue = supplierRows.reduce((s: number, r: any) => s + r.totalDue, 0);
+        data = { title: "Supplier Agent Report", columns: ["Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"], rows: supplierRows.map((r: any) => [r.name, r.phone || "-", r.bookingCount, r.totalCost, r.totalPaid, r.totalDue]), summary: makeSummary(totalPaid, totalDue) };
         break;
-      case "supplier_contract":
-        data = { title: "Supplier Contract Report", columns: ["Supplier","Company","Pilgrim Count","Contract Amount","Total Paid","Total Due"], rows: supplierContractRows.map((r: any) => [r.name, r.company, r.pilgrimCount, r.contractAmount, r.totalPaid, r.totalDue]) };
+      }
+      case "supplier_contract": {
+        const totalPaid = supplierContractRows.reduce((s: number, r: any) => s + r.totalPaid, 0);
+        const totalDue = supplierContractRows.reduce((s: number, r: any) => s + r.totalDue, 0);
+        data = { title: "Supplier Contract Report", columns: ["Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"], rows: supplierContractRows.map((r: any) => [r.name, "-", r.pilgrimCount, r.contractAmount, r.totalPaid, r.totalDue]), summary: makeSummary(totalPaid, totalDue) };
         break;
+      }
       default:
         data = { title: "Report", columns: [], rows: [] };
     }
@@ -623,7 +636,7 @@ export default function AdminReportsPage() {
           </div>
           <ExpandableReportTable
             rows={customerRows}
-            headers={["", "Customer Name", "Phone", "Total Bookings", "Total Paid", "Total Due", "Status"]}
+            headers={["", "Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"]}
             renderRow={(r: any) => (
               <>
                 <TableCell className="font-medium">
@@ -633,12 +646,10 @@ export default function AdminReportsPage() {
                   </div>
                 </TableCell>
                 <TableCell>{r.phone}</TableCell>
-                <TableCell className="text-right">{r.totalBookings}</TableCell>
+                <TableCell className="text-right">{r.travelers}</TableCell>
+                <TableCell className="text-right font-medium">{fmt(r.totalAmount)}</TableCell>
                 <TableCell className="text-right text-primary font-medium">{fmt(r.totalPaid)}</TableCell>
                 <TableCell className="text-right text-destructive font-medium">{fmt(r.totalDue)}</TableCell>
-                <TableCell className="text-right">
-                  <Badge variant={r.totalDue > 0 ? "destructive" : "default"} className="text-xs">{r.totalDue > 0 ? "Due" : "Clear"}</Badge>
-                </TableCell>
               </>
             )}
             renderExpanded={(r: any) => (
@@ -693,10 +704,10 @@ export default function AdminReportsPage() {
               <>
                 <TableCell>Total</TableCell>
                 <TableCell></TableCell>
-                <TableCell className="text-right font-bold">{customerRows.reduce((s: number, r: any) => s + r.totalBookings, 0)}</TableCell>
+                <TableCell className="text-right font-bold">{customerRows.reduce((s: number, r: any) => s + r.travelers, 0)}</TableCell>
+                <TableCell className="text-right font-bold">{fmt(customerRows.reduce((s: number, r: any) => s + r.totalAmount, 0))}</TableCell>
                 <TableCell className="text-right font-bold text-primary">{fmt(customerRows.reduce((s: number, r: any) => s + r.totalPaid, 0))}</TableCell>
                 <TableCell className="text-right font-bold text-destructive">{fmt(customerRows.reduce((s: number, r: any) => s + r.totalDue, 0))}</TableCell>
-                <TableCell></TableCell>
               </>
             }
           />
@@ -765,7 +776,7 @@ export default function AdminReportsPage() {
           </div>
           <ExpandableReportTable
             rows={moallemRows}
-            headers={["", "Moallem Name", "Phone", "Total Hajji", "Total Sale", "Total Received", "Total Due"]}
+            headers={["", "Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"]}
             renderRow={(r: any) => (
               <>
                 <TableCell className="font-medium">
@@ -858,20 +869,23 @@ export default function AdminReportsPage() {
           </div>
           <ExpandableReportTable
             rows={supplierRows}
-            headers={["", "Supplier Name", "Company", "Total Cost", "Total Paid", "Total Due", "Bookings"]}
+            headers={["", "Name", "Phone", "Pilgrim Count", "Contract Amount", "Total Paid", "Total Due"]}
             renderRow={(r: any) => (
               <>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0"><Building2 className="h-3.5 w-3.5 text-primary" /></div>
-                    {r.name}
+                    <div>
+                      <p>{r.name}</p>
+                      {r.company !== "-" && <p className="text-[11px] text-muted-foreground">{r.company}</p>}
+                    </div>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{r.company}</TableCell>
+                <TableCell className="text-muted-foreground">{r.phone}</TableCell>
+                <TableCell className="text-right font-medium">{r.bookingCount}</TableCell>
                 <TableCell className="text-right font-medium">{fmt(r.totalCost)}</TableCell>
                 <TableCell className="text-right text-primary font-medium">{fmt(r.totalPaid)}</TableCell>
                 <TableCell className="text-right text-destructive font-medium">{fmt(r.totalDue)}</TableCell>
-                <TableCell className="text-right">{r.bookingCount}</TableCell>
               </>
             )}
             renderExpanded={(r: any) => (
@@ -936,10 +950,10 @@ export default function AdminReportsPage() {
               <>
                 <TableCell>Total</TableCell>
                 <TableCell></TableCell>
+                <TableCell className="text-right font-bold">{supplierRows.reduce((s: number, r: any) => s + r.bookingCount, 0)}</TableCell>
                 <TableCell className="text-right font-bold">{fmt(supplierRows.reduce((s: number, r: any) => s + r.totalCost, 0))}</TableCell>
                 <TableCell className="text-right font-bold text-primary">{fmt(supplierRows.reduce((s: number, r: any) => s + r.totalPaid, 0))}</TableCell>
                 <TableCell className="text-right font-bold text-destructive">{fmt(supplierRows.reduce((s: number, r: any) => s + r.totalDue, 0))}</TableCell>
-                <TableCell className="text-right font-bold">{supplierRows.reduce((s: number, r: any) => s + r.bookingCount, 0)}</TableCell>
               </>
             }
           />
