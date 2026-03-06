@@ -226,7 +226,7 @@ export interface SupplierPdfData {
   notes?: string | null;
   bookings: { tracking_id: string; guest_name: string; package_name: string; total: number; cost: number; paid_to_supplier: number; supplier_due: number; status: string }[];
   agentPayments: { amount: number; date: string; method: string; notes?: string | null }[];
-  summary: { totalBookings: number; totalTravelers: number; totalCost: number; totalPaid: number; totalDue: number };
+  summary: { totalBookings: number; totalTravelers: number; contractedHajji: number; totalPaid: number; totalDue: number };
 }
 
 export async function generateSupplierPdf(data: SupplierPdfData, company: CompanyInfo) {
