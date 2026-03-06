@@ -241,7 +241,7 @@ export async function generateSupplierPdf(data: SupplierPdfData, company: Compan
   const pw = doc.internal.pageSize.getWidth();
 
 
-  if (qrDataUrl) addQrToDoc(doc, qrDataUrl, { size: 16, trackingId: firstTrackingId, position: "left" });
+  if (qrDataUrl) addQrToDoc(doc, qrDataUrl, { size: 16, trackingId: firstTrackingId, position: "top" });
 
   // Watermark based on supplier summary
   addPaymentWatermark(doc, getWatermarkStatus(data.summary.totalPaid, data.summary.totalDue));
