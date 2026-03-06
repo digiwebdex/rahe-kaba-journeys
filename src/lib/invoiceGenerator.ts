@@ -594,7 +594,8 @@ async function generateFamilyInvoice(
   const pageWidth = doc.internal.pageSize.getWidth();
   let y = addHeader(doc, { name: "RAHE KABA", phone: "+880 1601-505050", email: "rahekaba.info@gmail.com", address: "Dailorbagh Palli Bidyut Adjacent, Sonargaon Thana Road, Narayanganj-Dhaka" } as CompanyInfo, logoBase64);
 
-  addQrToDoc(doc, qrDataUrl, { size: 26, trackingId: booking.tracking_id, position: "bottom" });
+
+  addQrToDoc(doc, qrDataUrl, { size: 16, trackingId: booking.tracking_id, position: "left" });
   addPaymentWatermark(doc, getWatermarkStatus(Number(booking.paid_amount), Number(booking.due_amount || 0)));
 
   y = addInvoiceTitleBlock(doc, y, booking.tracking_id, new Date().toISOString(), booking.packages?.start_date || null, booking.status, true);
