@@ -20,7 +20,12 @@ async function migrate() {
     
     // Disable triggers to prevent double-counting in financial tables
     console.log('Disabling triggers...');
-    await client.query('SET session_replication_role = replica');
+    const triggerTables = ['bookings', 'payments', 'moallem_payments', 'moallem_commission_payments', 
+      'supplier_agent_payments', 'supplier_contract_payments', 'expenses', 'packages', 'user_roles',
+      'accounts', 'profiles', 'moallems', 'supplier_agents', 'hotels'];
+    for (const t of triggerTables) {
+      await client.query(`ALTER TABLE ${t} DISABLE TRIGGER ALL`);
+    }
     
     // =============================================
     // 1. ACCOUNTS (wallets)
