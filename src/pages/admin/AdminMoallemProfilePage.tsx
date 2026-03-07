@@ -168,13 +168,15 @@ export default function AdminMoallemProfilePage() {
       name: moallem.name, phone: moallem.phone, address: moallem.address,
       nid_number: moallem.nid_number, contract_date: moallem.contract_date,
       status: moallem.status, notes: moallem.notes,
-      bookings: bookings.map(b => ({
-        tracking_id: b.tracking_id, guest_name: b.guest_name || "—",
-        package_name: b.packages?.name || "—",
-        total: Number(b.total_amount), paid: Number(b.paid_amount),
-        due: Number(b.due_amount || 0), status: b.status,
-        date: format(new Date(b.created_at), "dd MMM yyyy"),
-      })),
+      bookings: bookings
+        .filter(b => Number(b.due_amount || 0) > 0)
+        .map(b => ({
+          tracking_id: b.tracking_id, guest_name: b.guest_name || "—",
+          package_name: b.packages?.name || "—",
+          total: Number(b.total_amount), paid: Number(b.paid_amount),
+          due: Number(b.due_amount || 0), status: b.status,
+          date: format(new Date(b.created_at), "dd MMM yyyy"),
+        })),
       moallemPayments: filteredPayments.map(p => ({ amount: Number(p.amount), date: p.date, method: p.payment_method || "cash", notes: p.notes })),
       commissionPayments: filteredCommissions.map(p => ({ amount: Number(p.amount), date: p.date, method: p.payment_method || "cash", notes: p.notes })),
       summary: {
