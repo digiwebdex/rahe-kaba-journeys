@@ -348,17 +348,13 @@ export interface CustomerPdfData {
 
 export async function generateCustomerPdf(data: CustomerPdfData, company: CompanyInfo) {
   const doc = new jsPDF();
-  const firstTrackingId = data.bookings[0]?.tracking_id;
-  const [logoBase64, sig, qrDataUrl] = await Promise.all([
+  const [logoBase64, sig, companyQr] = await Promise.all([
     loadLogoBase64(),
     getSignatureData(),
-    firstTrackingId ? generateTrackingQr(firstTrackingId) : Promise.resolve(""),
+    generateCompanyQr(),
   ]);
-  let y = addHeader(doc, company, logoBase64);
+  let y = addHeader(doc, company, logoBase64, companyQr);
   const pw = doc.internal.pageSize.getWidth();
-
-
-  if (qrDataUrl) addQrToDoc(doc, qrDataUrl, { size: 16, trackingId: firstTrackingId, position: "top" });
 
   // Watermark based on customer summary
   addPaymentWatermark(doc, getWatermarkStatus(data.summary.totalPaid, data.summary.totalDue));
