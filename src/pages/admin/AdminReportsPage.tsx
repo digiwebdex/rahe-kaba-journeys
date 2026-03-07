@@ -671,6 +671,72 @@ export default function AdminReportsPage() {
         </TabsContent>
 
         {/* ═══════════════════════════════════════
+            DAILY BOOKING TAB
+        ═══════════════════════════════════════ */}
+        <TabsContent value="daily">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+            <SummaryCard label="Total Days" value={dailyBookingRows.length} icon={CalendarIcon} color="text-foreground" />
+            <SummaryCard label="Total Bookings" value={dailyBookingRows.reduce((s: number, r: any) => s + r.count, 0)} icon={ClipboardList} color="text-foreground" />
+            <SummaryCard label="Total Paid" value={fmt(dailyBookingRows.reduce((s: number, r: any) => s + r.totalPaid, 0))} icon={TrendingUp} color="text-primary" />
+            <SummaryCard label="Total Due" value={fmt(dailyBookingRows.reduce((s: number, r: any) => s + r.totalDue, 0))} icon={TrendingDown} color="text-destructive" />
+          </div>
+          <ExpandableReportTable
+            rows={dailyBookingRows}
+            headers={["", "Date", "Bookings", "Travelers", "Total Amount", "Total Paid", "Total Due"]}
+            renderRow={(r: any) => (
+              <>
+                <TableCell className="font-medium">{r.dateFormatted}</TableCell>
+                <TableCell className="text-right">{r.count}</TableCell>
+                <TableCell className="text-right">{r.travelers}</TableCell>
+                <TableCell className="text-right font-medium">{fmt(r.totalAmount)}</TableCell>
+                <TableCell className="text-right text-primary">{fmt(r.totalPaid)}</TableCell>
+                <TableCell className="text-right text-destructive">{fmt(r.totalDue)}</TableCell>
+              </>
+            )}
+            renderExpanded={(r: any) => (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tracking ID</TableHead>
+                    <TableHead>Guest</TableHead>
+                    <TableHead>Package</TableHead>
+                    <TableHead className="text-right">Travelers</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Paid</TableHead>
+                    <TableHead className="text-right">Due</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {r.bookings.map((b: any, i: number) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-mono text-xs">{b.trackingId}</TableCell>
+                      <TableCell>{b.guestName}</TableCell>
+                      <TableCell>{b.packageName}</TableCell>
+                      <TableCell className="text-right">{b.travelers}</TableCell>
+                      <TableCell className="text-right">{fmt(b.totalAmount)}</TableCell>
+                      <TableCell className="text-right text-primary">{fmt(b.paidAmount)}</TableCell>
+                      <TableCell className="text-right text-destructive">{fmt(b.dueAmount)}</TableCell>
+                      <TableCell><StatusBadge status={b.status} /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+            totalRow={
+              <>
+                <TableCell className="font-bold">Total</TableCell>
+                <TableCell className="text-right font-bold">{dailyBookingRows.reduce((s: number, r: any) => s + r.count, 0)}</TableCell>
+                <TableCell className="text-right font-bold">{dailyBookingRows.reduce((s: number, r: any) => s + r.travelers, 0)}</TableCell>
+                <TableCell className="text-right font-bold">{fmt(dailyBookingRows.reduce((s: number, r: any) => s + r.totalAmount, 0))}</TableCell>
+                <TableCell className="text-right font-bold text-primary">{fmt(dailyBookingRows.reduce((s: number, r: any) => s + r.totalPaid, 0))}</TableCell>
+                <TableCell className="text-right font-bold text-destructive">{fmt(dailyBookingRows.reduce((s: number, r: any) => s + r.totalDue, 0))}</TableCell>
+              </>
+            }
+          />
+        </TabsContent>
+
+        {/*
             CUSTOMER WISE TAB
         ═══════════════════════════════════════ */}
         <TabsContent value="customer">
