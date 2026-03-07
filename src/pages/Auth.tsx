@@ -48,9 +48,10 @@ const Auth = () => {
       if (error) throw error;
 
 
-      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
+      const { data: roleData, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
+      console.log("Role query result:", { roleData, roleError, userId: data.user.id });
       const roles = (roleData || []).map((r: any) => r.role as string);
-      const isAdminRole = roles.includes("admin") || roles.includes("manager") || roles.includes("staff");
+      const isAdminRole = roles.includes("admin") || roles.includes("manager") || roles.includes("staff") || roles.includes("accountant") || roles.includes("booking") || roles.includes("cms") || roles.includes("viewer");
       toast.success(t("auth.welcomeBackToast"));
       navigate(isAdminRole ? "/admin" : "/dashboard");
     } catch (err: any) {
