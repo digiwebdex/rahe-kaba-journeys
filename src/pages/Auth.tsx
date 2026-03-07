@@ -44,14 +44,12 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { data, error } = await api.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
 
-
-      const { data: roleData, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
-      console.log("Role query result:", { roleData, roleError, userId: data.user.id });
-      const roles = (roleData || []).map((r: any) => r.role as string);
-      const isAdminRole = roles.includes("admin") || roles.includes("manager") || roles.includes("staff") || roles.includes("accountant") || roles.includes("booking") || roles.includes("cms") || roles.includes("viewer");
+      const roles = data?.user?.roles || [];
+      console.log("Login roles:", roles, "userId:", data?.user?.id);
+      const isAdminRole = roles.some((r: string) => ["admin", "manager", "staff", "accountant", "booking", "cms", "viewer"].includes(r));
       toast.success(t("auth.welcomeBackToast"));
       navigate(isAdminRole ? "/admin" : "/dashboard");
     } catch (err: any) {
