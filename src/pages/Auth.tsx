@@ -73,12 +73,11 @@ const Auth = () => {
     setLoading(true);
     try {
       const normalizedPhone = phone.trim() ? normalizePhone(phone) : "";
-      const { error } = await supabase.auth.signUp({
+      const { error } = await api.signUp({
         email: email.trim(),
         password,
         options: {
           data: { full_name: fullName.trim(), phone: normalizedPhone },
-          emailRedirectTo: window.location.origin,
         },
       });
       if (error) throw error;
