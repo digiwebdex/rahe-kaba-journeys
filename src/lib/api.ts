@@ -401,12 +401,13 @@ class QueryBuilder {
 // =============================================
 const storage = {
   from(bucket: string) {
+    const normalizePath = (p: string) => p.replace(/^\/+/, "");
     return {
-      async upload(path: string, file: File) {
+      async upload(path: string, file: File, _options?: { upsert?: boolean }) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('bucket', bucket);
-        formData.append('path', path);
+        formData.append('path', normalizePath(path));
         const token = TokenManager.getAccessToken();
         const res = await fetch(`${API_URL}/upload`, {
           method: 'POST',
@@ -422,17 +423,51 @@ const storage = {
       },
 
       async remove(paths: string[]) {
-        // TODO: implement server-side file deletion
+        const res = await apiFetch(`/storage/${bucket}`, {
+          method: 'DELETE',
+          body: JSON.stringify({ paths: paths.map(normalizePath) }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          return { data: null, error: { message: err.error } };
+        }
         return { data: {}, error: null };
       },
 
-      async createSignedUrl(path: string, expiresIn: number) {
-        // For local files, just return the path
-        return { data: { signedUrl: `${API_URL.replace('/api', '')}${path}` }, error: null };
+      async list(prefix: string = "", _options?: any) {
+        const res = await apiFetch(`/storage/${bucket}/list?prefix=${encodeURIComponent(prefix)}`);
+        if (!res.ok) {
+          const err = await res.json();
+          return { data: null, error: { message: err.error } };
+        }
+        const data = await res.json();
+        return { data, error: null };
+      },
+
+      async download(path: string) {
+        const token = TokenManager.getAccessToken();
+        const res = await fetch(`${API_URL}/storage/${bucket}/download?path=${encodeURIComponent(normalizePath(path))}`, {
+          method: 'GET',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) {
+          let message = 'Download failed';
+          try {
+            const err = await res.json();
+            message = err.error || message;
+          } catch {}
+          return { data: null, error: { message } };
+        }
+        const blob = await res.blob();
+        return { data: blob, error: null };
+      },
+
+      async createSignedUrl(path: string, _expiresIn: number) {
+        return { data: { signedUrl: `${API_URL.replace('/api', '')}/uploads/${bucket}/${normalizePath(path)}` }, error: null };
       },
 
       getPublicUrl(path: string) {
-        return { data: { publicUrl: `${API_URL.replace('/api', '')}${path}` } };
+        return { data: { publicUrl: `${API_URL.replace('/api', '')}/uploads/${bucket}/${normalizePath(path)}` } };
       },
     };
   },
