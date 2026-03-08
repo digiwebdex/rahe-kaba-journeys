@@ -68,7 +68,7 @@ export default function SupplierItemsManager({ supplierId, items, isViewer, onRe
       if (error) { toast({ title: "আপডেট ব্যর্থ", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "আইটেম আপডেট হয়েছে" });
     } else {
-      const { error } = await (supabase.from("supplier_agent_items" as any) as any).insert(payload);
+      const { error } = await supabase.from("supplier_agent_items").insert(payload);
       if (error) { toast({ title: "তৈরি ব্যর্থ", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "আইটেম যোগ হয়েছে" });
     }
