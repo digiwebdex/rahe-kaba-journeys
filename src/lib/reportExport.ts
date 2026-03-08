@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import logoImg from "@/assets/logo-nobg.png";
 import QRCode from "qrcode";
 import { getSignatureData, SignatureData } from "./pdfSignature";
+import { registerBengaliFont } from "./pdfFontLoader";
 
 // ── Brand Constants ──
 const GOLD = { r: 198, g: 165, b: 92 };
