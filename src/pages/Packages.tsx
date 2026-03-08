@@ -45,7 +45,7 @@ const Packages = () => {
               {t("packagesPage.heading")} <span className="text-gradient-gold">{t("packagesPage.headingHighlight")}</span>
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto mb-8">{t("packagesPage.description")}</p>
-            <Link to="/auth"
+            <Link to="/booking"
               className="inline-flex items-center gap-2 bg-gradient-gold text-primary-foreground font-semibold px-8 py-3.5 rounded-lg text-sm hover:opacity-90 transition-opacity shadow-gold">
               {t("nav.bookNow")} <ArrowRight className="h-4 w-4" />
             </Link>
