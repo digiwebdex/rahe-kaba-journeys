@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import { CompanyInfo } from "./invoiceGenerator";
 import { getSignatureData, SignatureData } from "./pdfSignature";
 import { generateTrackingQr, addQrToDoc, addPaymentWatermark, getWatermarkStatus } from "./pdfQrCode";
-import { registerBengaliFont } from "./pdfFontLoader";
+import { registerBengaliFont, addBengaliText } from "./pdfFontLoader";
 
 const GOLD = { r: 198, g: 165, b: 92 };
 const DARK = { r: 40, g: 46, b: 56 };
@@ -168,8 +168,7 @@ export async function generateMoallemPdf(data: MoallemPdfData, company: CompanyI
   doc.setFillColor(248, 248, 248);
   doc.rect(14, y, pw - 28, 24, "F");
   doc.setFontSize(10);
-  doc.setFont("NotoSansBengali", "normal");
-  doc.text(data.name, 18, y + 6);
+  await addBengaliText(doc, data.name, 18, y + 6, { fontSize: 10, fontWeight: "bold" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(`Phone: ${data.phone || "N/A"} | NID: ${data.nid_number || "N/A"}`, 18, y + 12);
@@ -285,8 +284,7 @@ export async function generateSupplierPdf(data: SupplierPdfData, company: Compan
   doc.setFillColor(248, 248, 248);
   doc.rect(14, y, pw - 28, 18, "F");
   doc.setFontSize(10);
-  doc.setFont("NotoSansBengali", "normal");
-  doc.text(data.agent_name, 18, y + 6);
+  await addBengaliText(doc, data.agent_name, 18, y + 6, { fontSize: 10, fontWeight: "bold" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(`Company: ${data.company_name || "N/A"} | Phone: ${data.phone || "N/A"} | Status: ${data.status}`, 18, y + 12);
@@ -440,8 +438,7 @@ export async function generateCustomerPdf(data: CustomerPdfData, company: Compan
   doc.setFillColor(248, 248, 248);
   doc.rect(14, y, pw - 28, 24, "F");
   doc.setFontSize(10);
-  doc.setFont("NotoSansBengali", "normal");
-  doc.text(data.full_name || "N/A", 18, y + 6);
+  await addBengaliText(doc, data.full_name || "N/A", 18, y + 6, { fontSize: 10, fontWeight: "bold" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(`Phone: ${data.phone || "N/A"} | Email: ${data.email || "N/A"}`, 18, y + 12);

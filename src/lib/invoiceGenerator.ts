@@ -4,7 +4,7 @@ import logoImg from "@/assets/logo-nobg.png";
 import { getSignatureData, SignatureData } from "./pdfSignature";
 import { generateTrackingQr, addQrToDoc, addPaymentWatermark, getWatermarkStatus } from "./pdfQrCode";
 import { supabase } from "@/integrations/supabase/client";
-import { registerBengaliFont } from "./pdfFontLoader";
+import { registerBengaliFont, addBengaliText, hasBengali } from "./pdfFontLoader";
 
 export interface CompanyInfo {
   name?: string;
@@ -211,9 +211,9 @@ function addInvoiceTitleBlock(
   return y + Math.max(leftMeta.length, rightMeta.length) * 5 + 4;
 }
 
-function addCustomerSection(
+async function addCustomerSection(
   doc: jsPDF, y: number, customer: InvoiceCustomer, moallemName?: string | null, totalMembers?: number
-): number {
+): Promise<number> {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   // Section header
@@ -243,7 +243,12 @@ function addCustomerSection(
   doc.setFont("helvetica", "bold");
   doc.text("Name:", col1, row);
   doc.setFont("helvetica", "normal");
-  doc.text(customer.full_name || "N/A", col1 + 18, row);
+  const custName = customer.full_name || "N/A";
+  if (hasBengali(custName)) {
+    await addBengaliText(doc, custName, col1 + 18, row, { fontSize: 8 });
+  } else {
+    doc.text(custName, col1 + 18, row);
+  }
 
   doc.setFont("helvetica", "bold");
   doc.text("Phone:", col2, row);
@@ -533,7 +538,7 @@ async function generateIndividualInvoice(
   y = addInvoiceTitleBlock(doc, y, booking.tracking_id, new Date().toISOString(), booking.packages?.start_date || null, booking.status, false);
 
   // Customer section
-  y = addCustomerSection(doc, y, customer, moallemName);
+  y = await addCustomerSection(doc, y, customer, moallemName);
 
   // Service table
   y = addSectionTitle(doc, y, "SERVICE DETAILS");
@@ -605,7 +610,7 @@ async function generateFamilyInvoice(
 
   y = addInvoiceTitleBlock(doc, y, booking.tracking_id, new Date().toISOString(), booking.packages?.start_date || null, booking.status, true);
 
-  y = addCustomerSection(doc, y, customer, moallemName, members.length || booking.num_travelers);
+  y = await addCustomerSection(doc, y, customer, moallemName, members.length || booking.num_travelers);
 
   // Members table
   y = addSectionTitle(doc, y, "FAMILY MEMBERS");
@@ -756,7 +761,7 @@ export async function generateReceipt(
   y += 8;
 
   // Customer box
-  y = addCustomerSection(doc, y, customer);
+  y = await addCustomerSection(doc, y, customer);
 
   // Payment details table
   autoTable(doc, {
