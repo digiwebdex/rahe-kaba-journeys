@@ -292,6 +292,9 @@ export default function AdminAccountingPage() {
         ))}
       </div>
 
+      {/* ============ DAILY CASHBOOK TAB ============ */}
+      {tab === "cashbook" && <DailyCashbook />}
+
       {/* ============ EXPENSES TAB ============ */}
       {tab === "expenses" && (
         <>
