@@ -186,7 +186,7 @@ export default function AdminCalculatorPage() {
           </div>
           <div className="flex justify-between text-sm border-t border-border pt-2">
             <span className="font-bold">মোট মুনাফা ({totalHajji} জন × {fmt(profitPerPerson)})</span>
-            <span className={`text-lg font-bold ${totalProfit >= 0 ? "text-emerald-500" : "text-destructive"}`}>{fmt(totalProfit)}</span>
+            <span className={`text-lg font-bold ${totalProfit >= 0 ? "text-green-500" : "text-destructive"}`}>{fmt(totalProfit)}</span>
           </div>
         </div>
 
