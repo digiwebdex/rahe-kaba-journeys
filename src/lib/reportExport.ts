@@ -220,6 +220,7 @@ export async function exportPDF({ title, columns, rows, summary }: ReportData) {
     loadLogoBase64(), generateCompanyQr(), getSignatureData(),
   ]);
   const doc = new jsPDF();
+  await registerBengaliFont(doc);
 
   let y = addCompanyHeader(doc, logoBase64, qrDataUrl);
   y = addReportTitle(doc, y, title);
