@@ -84,13 +84,14 @@ export default function AdminAccountingPage() {
   const [customerProfit, setCustomerProfit] = useState<any[]>([]);
 
   const fetchData = async () => {
-    const [expRes, payRes, bkRes, custRes, pkgRes, walletRes] = await Promise.all([
+    const [expRes, payRes, bkRes, custRes, pkgRes, walletRes, cashbookRes] = await Promise.all([
       supabase.from("expenses").select("*").order("date", { ascending: false }),
       supabase.from("payments").select("amount").eq("status", "completed"),
       supabase.from("bookings").select("id, tracking_id, guest_name, user_id").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, user_id, full_name, phone").order("full_name"),
       supabase.from("packages").select("id, name, type").eq("is_active", true).order("name"),
       supabase.from("accounts" as any).select("*").eq("type", "asset"),
+      supabase.from("daily_cashbook" as any).select("date, type, amount, category, payment_method").order("date", { ascending: false }),
     ]);
     setExpenses(expRes.data || []);
     setRevenue((payRes.data || []).reduce((s: number, p: any) => s + Number(p.amount), 0));
@@ -98,6 +99,7 @@ export default function AdminAccountingPage() {
     setCustomers(custRes.data || []);
     setPackages(pkgRes.data || []);
     setWalletAccounts((walletRes.data as any[]) || []);
+    setDailyCashbookEntries((cashbookRes.data as any[]) || []);
   };
 
   const fetchProfitViews = async () => {
