@@ -39,6 +39,11 @@ const AdminMoallemProfilePage = lazy(() => import("./pages/admin/AdminMoallemPro
 const AdminSupplierAgentsPage = lazy(() => import("./pages/admin/AdminSupplierAgentsPage"));
 const AdminSupplierAgentProfilePage = lazy(() => import("./pages/admin/AdminSupplierAgentProfilePage"));
 const AdminCalculatorPage = lazy(() => import("./pages/admin/AdminCalculatorPage"));
+const AdminHotelsPage = lazy(() => import("./pages/admin/AdminHotelsPage"));
+const AdminNotificationsPage = lazy(() => import("./pages/admin/AdminNotificationsPage"));
+const AdminDueAlertsPage = lazy(() => import("./pages/admin/AdminDueAlertsPage"));
+const AdminChartOfAccountsPage = lazy(() => import("./pages/admin/AdminChartOfAccountsPage"));
+const AdminReceivablesPage = lazy(() => import("./pages/admin/AdminReceivablesPage"));
 
 const queryClient = new QueryClient();
 
@@ -86,6 +91,11 @@ const App = () => (
               <Route path="supplier-agents" element={<AdminSupplierAgentsPage />} />
               <Route path="supplier-agents/:id" element={<AdminSupplierAgentProfilePage />} />
               <Route path="calculator" element={<AdminCalculatorPage />} />
+              <Route path="hotels" element={<AdminHotelsPage />} />
+              <Route path="notifications" element={<AdminNotificationsPage />} />
+              <Route path="due-alerts" element={<AdminDueAlertsPage />} />
+              <Route path="chart-of-accounts" element={<AdminChartOfAccountsPage />} />
+              <Route path="receivables" element={<AdminReceivablesPage />} />
               <Route path="cms" element={<AdminCmsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>

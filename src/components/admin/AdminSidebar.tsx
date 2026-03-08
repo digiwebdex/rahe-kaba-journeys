@@ -1,11 +1,12 @@
 import {
   LayoutDashboard, FileText, Users, Package, CreditCard,
   Calculator, BarChart3, Pencil, Settings, LogOut, UserCheck, Truck,
+  Hotel, Bell, AlertTriangle, BookOpen, DollarSign,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { NavLink } from "@/components/NavLink";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarHeader, SidebarFooter, SidebarSeparator,
 } from "@/components/ui/sidebar";
@@ -13,18 +14,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { AppRole } from "@/hooks/useUserRole";
 
-// Role access matrix — new 5-role system
-const menuItems = [
+// Role access matrix
+const mainMenuItems = [
   { title: "Dashboard",       url: "/admin",                icon: LayoutDashboard, roles: ["admin", "accountant", "viewer"] },
   { title: "Bookings",        url: "/admin/bookings",       icon: FileText,        roles: ["admin", "accountant", "booking", "viewer"] },
   { title: "Customers",       url: "/admin/customers",      icon: Users,           roles: ["admin", "accountant", "booking", "viewer"] },
   { title: "Moallems",        url: "/admin/moallems",       icon: UserCheck,       roles: ["admin", "accountant", "booking", "viewer"] },
   { title: "Supplier Agents", url: "/admin/supplier-agents", icon: Truck,          roles: ["admin", "accountant", "viewer"] },
+  { title: "Packages",        url: "/admin/packages",       icon: Package,         roles: ["admin", "viewer"] },
+  { title: "Hotels",          url: "/admin/hotels",         icon: Hotel,           roles: ["admin", "viewer"] },
+];
+
+const financeMenuItems = [
   { title: "Payments",        url: "/admin/payments",       icon: CreditCard,      roles: ["admin", "accountant", "viewer"] },
-  { title: "Accounting",      url: "/admin/accounting",     icon: Calculator,      roles: ["admin", "viewer"] },
+  { title: "Accounting",      url: "/admin/accounting",     icon: Calculator,      roles: ["admin", "accountant", "viewer"] },
+  { title: "Receivables",     url: "/admin/receivables",    icon: DollarSign,      roles: ["admin", "accountant", "viewer"] },
+  { title: "Chart of Accounts", url: "/admin/chart-of-accounts", icon: BookOpen,   roles: ["admin", "accountant"] },
   { title: "Reports",         url: "/admin/reports",        icon: BarChart3,       roles: ["admin", "accountant", "viewer"] },
   { title: "Calculator",      url: "/admin/calculator",     icon: Calculator,      roles: ["admin", "accountant", "booking", "viewer"] },
-  { title: "Packages",        url: "/admin/packages",       icon: Package,         roles: ["admin", "viewer"] },
+];
+
+const toolsMenuItems = [
+  { title: "Due Alerts",      url: "/admin/due-alerts",     icon: AlertTriangle,   roles: ["admin", "accountant", "booking", "viewer"] },
+  { title: "Notifications",   url: "/admin/notifications",  icon: Bell,            roles: ["admin"] },
   { title: "CMS",             url: "/admin/cms",            icon: Pencil,          roles: ["admin", "cms"] },
   { title: "Settings",        url: "/admin/settings",       icon: Settings,        roles: ["admin"] },
 ];
@@ -37,7 +49,39 @@ export function AdminSidebar({ role }: { role: AppRole }) {
     navigate("/");
   };
 
-  const filteredMenu = menuItems.filter((item) => role && item.roles.includes(role));
+  const filterByRole = (items: typeof mainMenuItems) =>
+    items.filter((item) => role && item.roles.includes(role));
+
+  const renderGroup = (label: string, items: typeof mainMenuItems) => {
+    const filtered = filterByRole(items);
+    if (filtered.length === 0) return null;
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground/60 px-3 mb-1">
+          {label}
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {filtered.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to={item.url}
+                    end={item.url === "/admin"}
+                    className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
+                    activeClassName="bg-primary/10 text-primary font-medium"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  };
 
   return (
     <Sidebar>
@@ -51,27 +95,9 @@ export function AdminSidebar({ role }: { role: AppRole }) {
       <SidebarSeparator />
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredMenu.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/admin"}
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted/50 transition-colors"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {renderGroup("Main", mainMenuItems)}
+        {renderGroup("Finance", financeMenuItems)}
+        {renderGroup("Tools", toolsMenuItems)}
       </SidebarContent>
 
       <SidebarFooter className="p-3">
