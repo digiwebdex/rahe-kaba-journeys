@@ -250,9 +250,10 @@ export interface SupplierPdfData {
   address?: string | null;
   status: string;
   notes?: string | null;
+  items?: { description: string; quantity: number; unit_price: number; total_amount: number }[];
   bookings: { tracking_id: string; guest_name: string; package_name: string; total: number; cost: number; paid_to_supplier: number; supplier_due: number; status: string }[];
   agentPayments: { amount: number; date: string; method: string; notes?: string | null }[];
-  summary: { totalBookings: number; totalTravelers: number; contractedHajji: number; totalPaid: number; totalDue: number };
+  summary: { totalBookings: number; totalTravelers: number; contractedHajji: number; totalPaid: number; totalDue: number; totalBilled: number };
 }
 
 export async function generateSupplierPdf(data: SupplierPdfData, company: CompanyInfo) {
