@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { Search, User, X, UserPlus } from "lucide-react";
 
 interface Customer {
@@ -44,7 +44,7 @@ export default function CustomerSearchSelect({ onSelect, selectedId }: Props) {
       const { data } = await supabase
         .from("profiles")
         .select("user_id, full_name, phone, email, passport_number, address")
-        .or(`full_name.ilike.${term},phone.ilike.${term},email.ilike.${term},passport_number.ilike.${term}`)
+        .ilike("full_name", term)
         .order("full_name")
         .limit(20);
       setResults(data || []);
