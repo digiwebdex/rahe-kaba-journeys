@@ -181,11 +181,16 @@ export default function AdminSupplierAgentProfilePage() {
       </CardContent></Card>
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card><CardContent className="pt-4 pb-4 text-center">
-          <CreditCard className="h-5 w-5 text-primary mx-auto mb-1" />
+          <Package className="h-5 w-5 text-primary mx-auto mb-1" />
+          <p className="text-lg font-bold">{fmt(totalBilled)}</p>
+          <p className="text-[10px] text-muted-foreground uppercase">মোট বিল</p>
+        </CardContent></Card>
+        <Card><CardContent className="pt-4 pb-4 text-center">
+          <CreditCard className="h-5 w-5 text-blue-500 mx-auto mb-1" />
           <p className="text-lg font-bold">{fmt(totalCost)}</p>
-          <p className="text-[10px] text-muted-foreground uppercase">মোট খরচ</p>
+          <p className="text-[10px] text-muted-foreground uppercase">বুকিং খরচ</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4 pb-4 text-center">
           <Wallet className="h-5 w-5 text-emerald-500 mx-auto mb-1" />
@@ -198,6 +203,14 @@ export default function AdminSupplierAgentProfilePage() {
           <p className="text-[10px] text-muted-foreground uppercase">মোট বকেয়া</p>
         </CardContent></Card>
       </div>
+
+      {/* Supplier Items / Services */}
+      <SupplierItemsManager
+        supplierId={id!}
+        items={supplierItems}
+        isViewer={isViewer}
+        onRefresh={loadData}
+      />
 
       {/* Date Filter */}
       <div className="flex items-center gap-3 flex-wrap">
