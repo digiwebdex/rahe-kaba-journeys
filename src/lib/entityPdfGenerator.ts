@@ -285,7 +285,7 @@ export async function generateSupplierPdf(data: SupplierPdfData, company: Compan
   doc.setFillColor(248, 248, 248);
   doc.rect(14, y, pw - 28, 18, "F");
   doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
+  doc.setFont("NotoSansBengali", "normal");
   doc.text(data.agent_name, 18, y + 6);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
