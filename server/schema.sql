@@ -1184,3 +1184,16 @@ CREATE TABLE IF NOT EXISTS moallem_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_moallem_items_moallem_id ON moallem_items(moallem_id);
+
+-- Supplier agent service items
+CREATE TABLE IF NOT EXISTS supplier_agent_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  supplier_agent_id UUID NOT NULL REFERENCES supplier_agents(id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  quantity NUMERIC NOT NULL DEFAULT 1,
+  unit_price NUMERIC NOT NULL DEFAULT 0,
+  total_amount NUMERIC NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_supplier_agent_items_supplier_id ON supplier_agent_items(supplier_agent_id);

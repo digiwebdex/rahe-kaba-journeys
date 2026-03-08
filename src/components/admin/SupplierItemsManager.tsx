@@ -64,11 +64,11 @@ export default function SupplierItemsManager({ supplierId, items, isViewer, onRe
     };
 
     if (editId) {
-      const { error } = await (supabase.from("supplier_agent_items" as any) as any).update(payload).eq("id", editId);
+      const { error } = await supabase.from("supplier_agent_items").update(payload).eq("id", editId);
       if (error) { toast({ title: "আপডেট ব্যর্থ", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "আইটেম আপডেট হয়েছে" });
     } else {
-      const { error } = await (supabase.from("supplier_agent_items" as any) as any).insert(payload);
+      const { error } = await supabase.from("supplier_agent_items").insert(payload);
       if (error) { toast({ title: "তৈরি ব্যর্থ", description: error.message, variant: "destructive" }); setSaving(false); return; }
       toast({ title: "আইটেম যোগ হয়েছে" });
     }
@@ -91,7 +91,7 @@ export default function SupplierItemsManager({ supplierId, items, isViewer, onRe
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    const { error } = await (supabase.from("supplier_agent_items" as any) as any).delete().eq("id", deleteId);
+    const { error } = await supabase.from("supplier_agent_items").delete().eq("id", deleteId);
     if (error) { toast({ title: "মুছতে ব্যর্থ", description: error.message, variant: "destructive" }); return; }
     toast({ title: "আইটেম মুছে ফেলা হয়েছে" });
     setDeleteId(null);

@@ -62,7 +62,7 @@ export default function AdminSupplierAgentProfilePage() {
       supabase.from("accounts").select("id, name, type, balance").order("name"),
       supabase.from("supplier_contracts").select("*").eq("supplier_id", id).order("created_at", { ascending: false }),
       supabase.from("supplier_contract_payments").select("*").eq("supplier_id", id).order("payment_date", { ascending: false }),
-      (supabase.from("supplier_agent_items" as any) as any).select("*").eq("supplier_agent_id", id).order("created_at", { ascending: true }),
+      supabase.from("supplier_agent_items").select("*").eq("supplier_agent_id", id).order("created_at", { ascending: true }),
     ]);
     setAgent(agRes.data);
     setBookings((bRes.data as any[]) || []);

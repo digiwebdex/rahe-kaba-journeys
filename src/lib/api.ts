@@ -195,6 +195,7 @@ const tableUrlMap: Record<string, string> = {
   otp_codes: '/otp-codes',
   daily_cashbook: '/daily-cashbook',
   moallem_items: '/moallem-items',
+  supplier_agent_items: '/supplier-agent-items',
 };
 
 // =============================================

@@ -56,7 +56,7 @@ export default function AdminSupplierAgentsPage() {
     const [a, p, itemsRes, paymentsDetailRes] = await Promise.all([
       supabase.from("supplier_agents").select("*").neq("status", "deleted").order("created_at", { ascending: false }),
       supabase.from("supplier_agent_payments").select("id, supplier_agent_id, amount"),
-      (supabase.from("supplier_agent_items" as any) as any).select("*").order("created_at", { ascending: true }),
+      supabase.from("supplier_agent_items").select("*").order("created_at", { ascending: true }),
       supabase.from("supplier_agent_payments").select("*").order("date", { ascending: false }),
     ]);
     if (a.data) setAgents(a.data as SupplierAgent[]);
