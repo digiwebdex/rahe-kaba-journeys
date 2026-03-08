@@ -7,7 +7,7 @@ import { Eye, EyeOff, Phone, Mail, Shield, CheckCircle2, XCircle } from "lucide-
 import { useLanguage } from "@/i18n/LanguageContext";
 import { normalizePhone, getPhoneError, handlePhoneChange } from "@/lib/phoneValidation";
 
-type AuthMode = "login" | "register" | "otp" | "forgot";
+type AuthMode = "login" | "register" | "forgot";
 
 const Auth = () => {
   const navigate = useNavigate();
