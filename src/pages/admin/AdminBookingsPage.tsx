@@ -327,11 +327,14 @@ export default function AdminBookingsPage() {
     setGeneratingId(null);
   };
 
-  const filtered = bookings.filter((b) => {
-    if (!search) return true;
+  const filtered = useMemo(() => bookings.filter((b) => {
     const q = search.toLowerCase();
-    return (b.tracking_id?.toLowerCase().includes(q) || b.guest_name?.toLowerCase()?.includes(q) || b.guest_passport?.toLowerCase()?.includes(q) || b.packages?.name?.toLowerCase().includes(q) || b.status?.toLowerCase().includes(q));
-  });
+    const matchesSearch = !search || (b.tracking_id?.toLowerCase().includes(q) || b.guest_name?.toLowerCase()?.includes(q) || b.guest_passport?.toLowerCase()?.includes(q) || b.packages?.name?.toLowerCase().includes(q) || b.status?.toLowerCase().includes(q));
+    const bookingDate = new Date(b.created_at);
+    const matchesFrom = !dateFrom || bookingDate >= new Date(dateFrom.setHours(0, 0, 0, 0));
+    const matchesTo = !dateTo || bookingDate <= new Date(new Date(dateTo).setHours(23, 59, 59, 999));
+    return matchesSearch && matchesFrom && matchesTo;
+  }), [bookings, search, dateFrom, dateTo]);
 
   const getBookingActions = (b: any): ActionItem[] => [
     { label: "View Details", icon: <Eye className="h-3.5 w-3.5" />, onClick: () => setViewBooking(b) },
@@ -347,22 +350,55 @@ export default function AdminBookingsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <h2 className="font-heading text-xl font-bold">All Bookings</h2>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button variant="outline" size="sm" onClick={() => exportPDF({ title: "Bookings Report", columns: ["Tracking ID", "Customer", "Package", "Travelers", "Total", "Paid", "Due", "Status"], rows: filtered.map(b => [b.tracking_id, b.guest_name || "—", b.packages?.name || "—", b.num_travelers, Number(b.total_amount), Number(b.paid_amount), Number(b.due_amount ?? 0), b.status]) })}><FileDown className="h-4 w-4 mr-1" />PDF</Button>
-          <Button variant="outline" size="sm" onClick={() => exportExcel({ title: "Bookings Report", columns: ["Tracking ID", "Customer", "Package", "Travelers", "Total", "Paid", "Due", "Status"], rows: filtered.map(b => [b.tracking_id, b.guest_name || "—", b.packages?.name || "—", b.num_travelers, Number(b.total_amount), Number(b.paid_amount), Number(b.due_amount ?? 0), b.status]) })}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
-          {!isViewer && (
-            <button onClick={() => navigate("/admin/bookings/create")}
-              className="inline-flex items-center gap-1.5 text-sm bg-gradient-gold text-primary-foreground font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity shadow-gold">
-              <Plus className="h-4 w-4" /> New Booking
-            </button>
-          )}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <h2 className="font-heading text-xl font-bold">All Bookings</h2>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => exportPDF({ title: "Bookings Report", columns: ["Tracking ID", "Customer", "Package", "Travelers", "Total", "Paid", "Due", "Status"], rows: filtered.map(b => [b.tracking_id, b.guest_name || "—", b.packages?.name || "—", b.num_travelers, Number(b.total_amount), Number(b.paid_amount), Number(b.due_amount ?? 0), b.status]) })}><FileDown className="h-4 w-4 mr-1" />PDF</Button>
+            <Button variant="outline" size="sm" onClick={() => exportExcel({ title: "Bookings Report", columns: ["Tracking ID", "Customer", "Package", "Travelers", "Total", "Paid", "Due", "Status"], rows: filtered.map(b => [b.tracking_id, b.guest_name || "—", b.packages?.name || "—", b.num_travelers, Number(b.total_amount), Number(b.paid_amount), Number(b.due_amount ?? 0), b.status]) })}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+            {!isViewer && (
+              <button onClick={() => navigate("/admin/bookings/create")}
+                className="inline-flex items-center gap-1.5 text-sm bg-gradient-gold text-primary-foreground font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity shadow-gold">
+                <Plus className="h-4 w-4" /> New Booking
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input className={inputClass + " pl-9"} placeholder="Search bookings..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("w-[140px] justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "From date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className={cn("p-3 pointer-events-auto")} />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("w-[140px] justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {dateTo ? format(dateTo, "dd/MM/yyyy") : "To date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className={cn("p-3 pointer-events-auto")} />
+            </PopoverContent>
+          </Popover>
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+              <X className="h-3.5 w-3.5 mr-1" /> Clear
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground ml-auto">{filtered.length} bookings</span>
         </div>
+      </div>
       </div>
 
       {filtered.map((b: any) => (
