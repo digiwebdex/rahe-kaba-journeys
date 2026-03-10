@@ -65,6 +65,7 @@ export default function AdminSupplierAgentProfilePage() {
     amount: "", payment_method: "cash",
     date: new Date().toISOString().split("T")[0],
     notes: "", wallet_account_id: "", booking_id: "",
+    service_type: "",
   };
   const [paymentForm, setPaymentForm] = useState(emptyForm);
 
