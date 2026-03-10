@@ -611,7 +611,8 @@ export default function AdminMoallemProfilePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-border text-left text-muted-foreground text-xs">
-                  <th className="pb-2 pr-3">তারিখ</th><th className="pb-2 pr-3">পরিমাণ</th><th className="pb-2 pr-3">পদ্ধতি</th><th className="pb-2 pr-3">বুকিং</th><th className="pb-2">নোট</th>
+                  <th className="pb-2 pr-3">তারিখ</th><th className="pb-2 pr-3">পরিমাণ</th><th className="pb-2 pr-3">পদ্ধতি</th><th className="pb-2 pr-3">বুকিং</th><th className="pb-2 pr-3">নোট</th>
+                  {!isViewer && <th className="pb-2 w-16">অ্যাকশন</th>}
                 </tr></thead>
                 <tbody>
                   {filteredCommissions.map((p: any) => (
@@ -620,7 +621,15 @@ export default function AdminMoallemProfilePage() {
                       <td className="py-2 pr-3 font-bold text-emerald-500">{fmt(p.amount)}</td>
                       <td className="py-2 pr-3 capitalize">{p.payment_method}</td>
                       <td className="py-2 pr-3 text-xs font-mono text-primary">{p.booking_id ? bookings.find(b => b.id === p.booking_id)?.tracking_id || "—" : "General"}</td>
-                      <td className="py-2 text-xs text-muted-foreground">{p.notes || "—"}</td>
+                      <td className="py-2 pr-3 text-xs text-muted-foreground">{p.notes || "—"}</td>
+                      {!isViewer && (
+                        <td className="py-2">
+                          <div className="flex gap-1">
+                            <button onClick={() => startEditPayment(p, "commission")} className="text-primary hover:text-primary/80 p-1"><Pencil className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => { setDeletePaymentId(p.id); setDeletePaymentType("commission"); }} className="text-destructive hover:text-destructive/80 p-1"><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
