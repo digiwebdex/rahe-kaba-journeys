@@ -309,7 +309,7 @@ export async function exportHajjiPDF({ title, customers }: HajjiReportData) {
           fmt(b.total), fmt(b.paid), fmt(b.due),
           b.status.charAt(0).toUpperCase() + b.status.slice(1),
         ]),
-        styles: { fontSize: 7, font: "NotoSansBengali" },
+        styles: { fontSize: 7, font: "helvetica" },
         headStyles: { fillColor: [60, 70, 85] },
         alternateRowStyles: { fillColor: [250, 249, 247] },
         margin: { left: 18, right: 18 },

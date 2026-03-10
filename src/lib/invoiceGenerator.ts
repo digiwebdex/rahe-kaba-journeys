@@ -887,7 +887,7 @@ export async function generateCommissionReceipt(
       ["Commission Due", fmt(data.commissionDue)],
       ...(data.notes ? [["Notes", data.notes]] : []),
     ],
-    styles: { fontSize: 8, cellPadding: 3, font: "NotoSansBengali" },
+    styles: { fontSize: 8, cellPadding: 3, font: "helvetica" },
     headStyles: { fillColor: [DARK.r, DARK.g, DARK.b], textColor: [255, 255, 255], fontSize: 7.5 },
     columnStyles: { 0: { fontStyle: "bold", cellWidth: 55 } },
     margin: { left: 14, right: 14 },
