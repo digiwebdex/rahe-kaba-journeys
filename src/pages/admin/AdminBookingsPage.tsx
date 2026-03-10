@@ -262,11 +262,27 @@ export default function AdminBookingsPage() {
 
   const confirmDelete = async () => {
     if (!deleteId) return;
-    const { error } = await supabase.from("bookings").delete().eq("id", deleteId);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Booking deleted");
-    setDeleteId(null);
-    fetchBookings();
+    try {
+      // Delete all dependent records first to avoid FK constraint violations
+      await Promise.all([
+        supabase.from("payments").delete().eq("booking_id", deleteId),
+        supabase.from("expenses").delete().eq("booking_id", deleteId),
+        supabase.from("booking_members").delete().eq("booking_id", deleteId),
+        supabase.from("booking_documents").delete().eq("booking_id", deleteId),
+        supabase.from("moallem_payments").delete().eq("booking_id", deleteId),
+        supabase.from("moallem_commission_payments").delete().eq("booking_id", deleteId),
+        supabase.from("supplier_agent_payments").delete().eq("booking_id", deleteId),
+        supabase.from("notification_logs").delete().eq("booking_id", deleteId),
+        supabase.from("transactions").delete().eq("booking_id", deleteId),
+      ]);
+      const { error } = await supabase.from("bookings").delete().eq("id", deleteId);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Booking and all related records deleted");
+      setDeleteId(null);
+      fetchBookings();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete booking");
+    }
   };
 
   const handleDuplicate = async (b: any) => {
@@ -593,7 +609,7 @@ export default function AdminBookingsPage() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setDeleteId(null)}>
           <div className="bg-card border border-border rounded-xl p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-heading font-bold text-lg mb-2">Delete Booking?</h3>
-            <p className="text-sm text-muted-foreground mb-4">This action cannot be undone. All associated payments will remain.</p>
+            <p className="text-sm text-muted-foreground mb-4">This action cannot be undone. All associated payments, expenses, and records will be permanently deleted.</p>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setDeleteId(null)} className="text-sm px-4 py-2 rounded-md bg-secondary">Cancel</button>
               <button onClick={confirmDelete} className="text-sm px-4 py-2 rounded-md bg-destructive text-destructive-foreground">Delete</button>
