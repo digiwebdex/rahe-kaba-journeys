@@ -45,6 +45,7 @@ export default function AdminPaymentsPage() {
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [editType, setEditType] = useState<PaymentType>("customer");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteType, setDeleteType] = useState<PaymentType>("customer");
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,6 +74,7 @@ export default function AdminPaymentsPage() {
   const [viewPayment, setViewPayment] = useState<any>(null);
   const [expandedMoallemId, setExpandedMoallemId] = useState<string | null>(null);
   const [expandedSupplierId, setExpandedSupplierId] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const fetchPayments = async () => {
     const [payRes, moallemPayRes, supplierPayRes, walletRes, profileRes] = await Promise.all([
       supabase.from("payments").select("*, bookings(tracking_id, total_amount, paid_amount, due_amount, guest_name, guest_passport, num_travelers, status, packages(name, type, duration_days))").order("created_at", { ascending: false }),
@@ -278,19 +280,39 @@ export default function AdminPaymentsPage() {
 
   const startEdit = (p: any) => {
     setEditingId(p.id);
-    setEditForm({ amount: p.amount, due_date: p.due_date || "", status: p.status, payment_method: p.payment_method || "manual", notes: p.notes || "", transaction_id: p.transaction_id || "" });
+    setEditType(p._type || "customer");
+    setEditForm({ amount: p.amount, due_date: p.due_date || "", status: p.status || "completed", payment_method: p.payment_method || "manual", notes: p.notes || "", transaction_id: p.transaction_id || "", date: p.date || "" });
+    if (p._type === "moallem" || p._type === "supplier") {
+      setShowEditModal(true);
+    }
   };
 
   const saveEdit = async () => {
     if (!editingId) return;
-    const { error } = await supabase.from("payments").update({
-      amount: parseFloat(editForm.amount), due_date: editForm.due_date || null,
-      status: editForm.status, payment_method: editForm.payment_method,
-      notes: editForm.notes || null, transaction_id: editForm.transaction_id || null,
-      ...(editForm.status === "completed" && !payments.find(p => p.id === editingId)?.paid_at ? { paid_at: new Date().toISOString() } : {}),
-    }).eq("id", editingId);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Payment updated"); setEditingId(null); fetchPayments();
+    if (editType === "moallem") {
+      const { error } = await supabase.from("moallem_payments").update({
+        amount: parseFloat(editForm.amount), payment_method: editForm.payment_method,
+        notes: editForm.notes || null, date: editForm.date || undefined,
+      }).eq("id", editingId);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Moallem payment updated"); setEditingId(null); setShowEditModal(false); fetchPayments();
+    } else if (editType === "supplier") {
+      const { error } = await supabase.from("supplier_agent_payments").update({
+        amount: parseFloat(editForm.amount), payment_method: editForm.payment_method,
+        notes: editForm.notes || null, date: editForm.date || undefined,
+      }).eq("id", editingId);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Supplier payment updated"); setEditingId(null); setShowEditModal(false); fetchPayments();
+    } else {
+      const { error } = await supabase.from("payments").update({
+        amount: parseFloat(editForm.amount), due_date: editForm.due_date || null,
+        status: editForm.status, payment_method: editForm.payment_method,
+        notes: editForm.notes || null, transaction_id: editForm.transaction_id || null,
+        ...(editForm.status === "completed" && !payments.find(p => p.id === editingId)?.paid_at ? { paid_at: new Date().toISOString() } : {}),
+      }).eq("id", editingId);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Payment updated"); setEditingId(null); fetchPayments();
+    }
   };
 
   const confirmDelete = async () => {
@@ -508,9 +530,10 @@ export default function AdminPaymentsPage() {
                           <td className="py-2.5 px-4 text-xs">{p.date ? new Date(p.date).toLocaleDateString() : "—"}</td>
                           <td className="py-2.5 px-4 text-xs text-muted-foreground truncate max-w-[150px]">{p.notes || "—"}</td>
                           <td className="py-2.5 px-4" onClick={(e) => e.stopPropagation()}>
-                            <AdminActionMenu inlineCount={0} actions={[
+                             <AdminActionMenu inlineCount={0} actions={[
+                              { label: "Edit", icon: <Edit2 className="h-3.5 w-3.5" />, onClick: () => startEdit({ ...p, _type: "moallem" }), variant: "warning", hidden: !canModify },
                               { label: "Delete", icon: <Trash2 className="h-3.5 w-3.5" />, onClick: () => { setDeleteId(p.id); setDeleteType("moallem"); }, variant: "destructive", hidden: !canModify },
-                            ]} />
+                             ]} />
                           </td>
                         </tr>
                       ))}
@@ -575,9 +598,10 @@ export default function AdminPaymentsPage() {
                           <td className="py-2.5 px-4 text-xs">{p.date ? new Date(p.date).toLocaleDateString() : "—"}</td>
                           <td className="py-2.5 px-4 text-xs text-muted-foreground truncate max-w-[150px]">{p.notes || "—"}</td>
                           <td className="py-2.5 px-4" onClick={(e) => e.stopPropagation()}>
-                            <AdminActionMenu inlineCount={0} actions={[
+                             <AdminActionMenu inlineCount={0} actions={[
+                              { label: "Edit", icon: <Edit2 className="h-3.5 w-3.5" />, onClick: () => startEdit({ ...p, _type: "supplier" }), variant: "warning", hidden: !canModify },
                               { label: "Delete", icon: <Trash2 className="h-3.5 w-3.5" />, onClick: () => { setDeleteId(p.id); setDeleteType("supplier"); }, variant: "destructive", hidden: !canModify },
-                            ]} />
+                             ]} />
                           </td>
                         </tr>
                       ))}
@@ -669,6 +693,7 @@ export default function AdminPaymentsPage() {
                       {(p._type === "moallem" || p._type === "supplier") ? (
                         <AdminActionMenu inlineCount={1} actions={[
                           { label: "PDF", icon: <FileDown className="h-3.5 w-3.5" />, onClick: () => exportPDF({ title: `Payment - ${p._displayName}`, columns: ["Type", "Tracking ID", "Name", "Amount", "Method", "Date"], rows: [[badge.label, p._trackingId, p._displayName, p._amount, p.payment_method || "—", p.date ? new Date(p.date).toLocaleDateString() : "—"]], summary: [`Total Amount: ৳${p._amount.toLocaleString()}`] }) },
+                          { label: "Edit", icon: <Edit2 className="h-3.5 w-3.5" />, onClick: () => startEdit(p), variant: "warning", hidden: !canModify },
                           { label: "Delete", icon: <Trash2 className="h-3.5 w-3.5" />, onClick: () => { setDeleteId(p.id); setDeleteType(p._type); }, variant: "destructive", hidden: !canModify },
                         ]} />
                       ) : p.status === "pending" && markPaidId === p.id ? (
@@ -1012,6 +1037,39 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
       )}
+
+      {/* Edit Moallem/Supplier Payment Modal */}
+      <Dialog open={showEditModal} onOpenChange={(o) => { if (!o) { setShowEditModal(false); setEditingId(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading">{editType === "moallem" ? "মোয়াল্লেম পেমেন্ট সম্পাদনা" : "সাপ্লায়ার পেমেন্ট সম্পাদনা"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">পরিমাণ (৳) *</label>
+              <input className={inputClass} type="number" min={1} value={editForm.amount || ""} onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">পদ্ধতি</label>
+              <select className={inputClass} value={editForm.payment_method || "cash"} onChange={(e) => setEditForm({ ...editForm, payment_method: e.target.value })}>
+                {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">তারিখ</label>
+              <input className={inputClass} type="date" value={editForm.date || ""} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">নোট</label>
+              <textarea className={inputClass + " resize-none"} rows={2} value={editForm.notes || ""} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => { setShowEditModal(false); setEditingId(null); }} className="text-sm px-4 py-2 rounded-md bg-secondary">বাতিল</button>
+            <button onClick={saveEdit} className="text-sm px-4 py-2 rounded-md bg-primary text-primary-foreground font-semibold flex items-center gap-2"><Save className="h-4 w-4" /> সেভ</button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

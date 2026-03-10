@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Users, FileText, CreditCard, TrendingDown,
   Phone, MapPin, CalendarDays, Hash, Plus, Wallet, Download,
-  Package, Trash2,
+  Package, Trash2, Pencil, Save, X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { generateMoallemPdf, getCompanyInfoForPdf, MoallemPdfData } from "@/lib/entityPdfGenerator";
@@ -58,6 +58,15 @@ export default function AdminMoallemProfilePage() {
   const [showItemForm, setShowItemForm] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [itemForm, setItemForm] = useState({ description: "", quantity: "1", unit_price: "0" });
+  const [editItemId, setEditItemId] = useState<string | null>(null);
+
+  // Edit/Delete payment state
+  const [editPaymentId, setEditPaymentId] = useState<string | null>(null);
+  const [editPaymentType, setEditPaymentType] = useState<"payment" | "commission">("payment");
+  const [editPaymentForm, setEditPaymentForm] = useState({ amount: "", payment_method: "cash", date: "", notes: "" });
+  const [showEditPaymentModal, setShowEditPaymentModal] = useState(false);
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const [deletePaymentType, setDeletePaymentType] = useState<"payment" | "commission">("payment");
 
   // Date filter
   const [dateFrom, setDateFrom] = useState("");
@@ -119,6 +128,65 @@ export default function AdminMoallemProfilePage() {
     if (error) { toast({ title: "মুছতে ব্যর্থ", description: error.message, variant: "destructive" }); return; }
     toast({ title: "আইটেম মুছে ফেলা হয়েছে" });
     loadData();
+  };
+
+  const startEditItem = (item: any) => {
+    setEditItemId(item.id);
+    setItemForm({ description: item.description, quantity: String(item.quantity), unit_price: String(item.unit_price) });
+    setShowItemForm(true);
+  };
+
+  const handleSaveItem = async () => {
+    const qty = parseFloat(itemForm.quantity) || 0;
+    const price = parseFloat(itemForm.unit_price) || 0;
+    if (!itemForm.description.trim()) { toast({ title: "বিবরণ দিন", variant: "destructive" }); return; }
+    if (qty <= 0 || price <= 0) { toast({ title: "সঠিক পরিমাণ ও মূল্য দিন", variant: "destructive" }); return; }
+    if (editItemId) {
+      const { error } = await (supabase as any).from("moallem_items").update({
+        description: itemForm.description.trim(), quantity: qty, unit_price: price, total_amount: qty * price,
+      }).eq("id", editItemId);
+      if (error) { toast({ title: "আপডেট ব্যর্থ", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "আইটেম আপডেট হয়েছে" });
+    } else {
+      const { error } = await (supabase as any).from("moallem_items").insert({
+        moallem_id: id, description: itemForm.description.trim(), quantity: qty, unit_price: price, total_amount: qty * price,
+      });
+      if (error) { toast({ title: "ত্রুটি", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "আইটেম যোগ হয়েছে" });
+    }
+    setItemForm({ description: "", quantity: "1", unit_price: "0" });
+    setEditItemId(null);
+    setShowItemForm(false);
+    loadData();
+  };
+
+  // Payment edit/delete handlers
+  const startEditPayment = (p: any, type: "payment" | "commission") => {
+    setEditPaymentId(p.id);
+    setEditPaymentType(type);
+    setEditPaymentForm({ amount: String(p.amount), payment_method: p.payment_method || "cash", date: p.date || "", notes: p.notes || "" });
+    setShowEditPaymentModal(true);
+  };
+
+  const handleSavePaymentEdit = async () => {
+    if (!editPaymentId) return;
+    const table = editPaymentType === "commission" ? "moallem_commission_payments" : "moallem_payments";
+    const { error } = await (supabase as any).from(table).update({
+      amount: parseFloat(editPaymentForm.amount), payment_method: editPaymentForm.payment_method,
+      date: editPaymentForm.date || undefined, notes: editPaymentForm.notes || null,
+    }).eq("id", editPaymentId);
+    if (error) { toast({ title: "আপডেট ব্যর্থ", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "পেমেন্ট আপডেট হয়েছে" });
+    setEditPaymentId(null); setShowEditPaymentModal(false); loadData();
+  };
+
+  const confirmDeletePayment = async () => {
+    if (!deletePaymentId) return;
+    const table = deletePaymentType === "commission" ? "moallem_commission_payments" : "moallem_payments";
+    const { error } = await (supabase as any).from(table).delete().eq("id", deletePaymentId);
+    if (error) { toast({ title: "মুছতে ব্যর্থ", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "পেমেন্ট মুছে ফেলা হয়েছে" });
+    setDeletePaymentId(null); loadData();
   };
 
   const handleRecordPayment = async () => {
@@ -462,9 +530,10 @@ export default function AdminMoallemProfilePage() {
                       <td className="py-2 pr-3 text-right font-bold">{fmt(Number(item.total_amount))}</td>
                       {!isViewer && (
                         <td className="py-2">
-                          <button onClick={() => handleDeleteItem(item.id)} className="text-destructive hover:text-destructive/80 p-1">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <div className="flex gap-1">
+                            <button onClick={() => startEditItem(item)} className="text-primary hover:text-primary/80 p-1"><Pencil className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => handleDeleteItem(item.id)} className="text-destructive hover:text-destructive/80 p-1"><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -502,7 +571,8 @@ export default function AdminMoallemProfilePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-border text-left text-muted-foreground text-xs">
-                  <th className="pb-2 pr-3">তারিখ</th><th className="pb-2 pr-3">পরিমাণ</th><th className="pb-2 pr-3">পদ্ধতি</th><th className="pb-2 pr-3">বুকিং</th><th className="pb-2">নোট</th>
+                  <th className="pb-2 pr-3">তারিখ</th><th className="pb-2 pr-3">পরিমাণ</th><th className="pb-2 pr-3">পদ্ধতি</th><th className="pb-2 pr-3">বুকিং</th><th className="pb-2 pr-3">নোট</th>
+                  {!isViewer && <th className="pb-2 w-16">অ্যাকশন</th>}
                 </tr></thead>
                 <tbody>
                   {filteredPayments.map((p: any) => (
@@ -511,7 +581,15 @@ export default function AdminMoallemProfilePage() {
                       <td className="py-2 pr-3 font-bold text-emerald-500">{fmt(p.amount)}</td>
                       <td className="py-2 pr-3 capitalize">{p.payment_method}</td>
                       <td className="py-2 pr-3 text-xs font-mono text-primary">{p.booking_id ? bookings.find(b => b.id === p.booking_id)?.tracking_id || "—" : "General"}</td>
-                      <td className="py-2 text-xs text-muted-foreground">{p.notes || "—"}</td>
+                      <td className="py-2 pr-3 text-xs text-muted-foreground">{p.notes || "—"}</td>
+                      {!isViewer && (
+                        <td className="py-2">
+                          <div className="flex gap-1">
+                            <button onClick={() => startEditPayment(p, "payment")} className="text-primary hover:text-primary/80 p-1"><Pencil className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => { setDeletePaymentId(p.id); setDeletePaymentType("payment"); }} className="text-destructive hover:text-destructive/80 p-1"><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -533,7 +611,8 @@ export default function AdminMoallemProfilePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-border text-left text-muted-foreground text-xs">
-                  <th className="pb-2 pr-3">তারিখ</th><th className="pb-2 pr-3">পরিমাণ</th><th className="pb-2 pr-3">পদ্ধতি</th><th className="pb-2 pr-3">বুকিং</th><th className="pb-2">নোট</th>
+                  <th className="pb-2 pr-3">তারিখ</th><th className="pb-2 pr-3">পরিমাণ</th><th className="pb-2 pr-3">পদ্ধতি</th><th className="pb-2 pr-3">বুকিং</th><th className="pb-2 pr-3">নোট</th>
+                  {!isViewer && <th className="pb-2 w-16">অ্যাকশন</th>}
                 </tr></thead>
                 <tbody>
                   {filteredCommissions.map((p: any) => (
@@ -542,7 +621,15 @@ export default function AdminMoallemProfilePage() {
                       <td className="py-2 pr-3 font-bold text-emerald-500">{fmt(p.amount)}</td>
                       <td className="py-2 pr-3 capitalize">{p.payment_method}</td>
                       <td className="py-2 pr-3 text-xs font-mono text-primary">{p.booking_id ? bookings.find(b => b.id === p.booking_id)?.tracking_id || "—" : "General"}</td>
-                      <td className="py-2 text-xs text-muted-foreground">{p.notes || "—"}</td>
+                      <td className="py-2 pr-3 text-xs text-muted-foreground">{p.notes || "—"}</td>
+                      {!isViewer && (
+                        <td className="py-2">
+                          <div className="flex gap-1">
+                            <button onClick={() => startEditPayment(p, "commission")} className="text-primary hover:text-primary/80 p-1"><Pencil className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => { setDeletePaymentId(p.id); setDeletePaymentType("commission"); }} className="text-destructive hover:text-destructive/80 p-1"><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -589,10 +676,10 @@ export default function AdminMoallemProfilePage() {
       {renderPaymentDialog("মোয়াল্লেম পেমেন্ট রেকর্ড", showPaymentForm, setShowPaymentForm, paymentForm, setPaymentForm, handleRecordPayment)}
       {renderPaymentDialog("কমিশন পরিশোধ রেকর্ড", showCommissionForm, setShowCommissionForm, commissionForm, setCommissionForm, handleRecordCommission)}
 
-      {/* Add Service Item Dialog */}
-      <Dialog open={showItemForm} onOpenChange={setShowItemForm}>
+      {/* Add/Edit Service Item Dialog */}
+      <Dialog open={showItemForm} onOpenChange={(o) => { if (!o) { setShowItemForm(false); setEditItemId(null); setItemForm({ description: "", quantity: "1", unit_price: "0" }); } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>সার্ভিস আইটেম যোগ করুন</DialogTitle><DialogDescription>মোয়াল্লেম কী কী সার্ভিস দিয়েছে তা লিখুন</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{editItemId ? "সার্ভিস আইটেম সম্পাদনা" : "সার্ভিস আইটেম যোগ করুন"}</DialogTitle><DialogDescription>মোয়াল্লেম কী কী সার্ভিস দিয়েছে তা লিখুন</DialogDescription></DialogHeader>
           <div className="space-y-3">
             <div><label className="text-xs text-muted-foreground block mb-1">বিবরণ *</label>
               <Input value={itemForm.description} onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} placeholder="যেমন: উমরাহ ভিসা, টিকেট..." /></div>
@@ -608,11 +695,49 @@ export default function AdminMoallemProfilePage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowItemForm(false)}>বাতিল</Button>
-            <Button onClick={handleAddItem}>যোগ করুন</Button>
+            <Button variant="outline" onClick={() => { setShowItemForm(false); setEditItemId(null); setItemForm({ description: "", quantity: "1", unit_price: "0" }); }}>বাতিল</Button>
+            <Button onClick={handleSaveItem}>{editItemId ? "আপডেট করুন" : "যোগ করুন"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Payment Modal */}
+      <Dialog open={showEditPaymentModal} onOpenChange={(o) => { if (!o) { setShowEditPaymentModal(false); setEditPaymentId(null); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editPaymentType === "commission" ? "কমিশন পেমেন্ট সম্পাদনা" : "পেমেন্ট সম্পাদনা"}</DialogTitle><DialogDescription>পেমেন্ট তথ্য পরিবর্তন করুন</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <div><label className="text-xs text-muted-foreground block mb-1">পরিমাণ (৳) *</label>
+              <Input type="number" min={0} value={editPaymentForm.amount} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, amount: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground block mb-1">পদ্ধতি</label>
+              <Select value={editPaymentForm.payment_method} onValueChange={(v) => setEditPaymentForm({ ...editPaymentForm, payment_method: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+              </Select></div>
+            <div><label className="text-xs text-muted-foreground block mb-1">তারিখ</label>
+              <Input type="date" value={editPaymentForm.date} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, date: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground block mb-1">নোট</label>
+              <Input value={editPaymentForm.notes} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, notes: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEditPaymentModal(false); setEditPaymentId(null); }}>বাতিল</Button>
+            <Button onClick={handleSavePaymentEdit}>আপডেট করুন</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Payment Confirmation */}
+      {deletePaymentId && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setDeletePaymentId(null)}>
+          <div className="bg-card border border-border rounded-xl p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-heading font-bold text-lg mb-2">পেমেন্ট মুছবেন?</h3>
+            <p className="text-sm text-muted-foreground mb-4">এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।</p>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setDeletePaymentId(null)}>বাতিল</Button>
+              <Button variant="destructive" onClick={confirmDeletePayment}>মুছুন</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

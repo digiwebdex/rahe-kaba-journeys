@@ -15,7 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, FileText, CreditCard, TrendingDown,
-  Phone, MapPin, Truck, Building2, Plus, Wallet, Download, Package,
+  Phone, MapPin, Truck, Building2, Plus, Wallet, Download, Package, Pencil, Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { generateSupplierPdf, getCompanyInfoForPdf, SupplierPdfData } from "@/lib/entityPdfGenerator";
@@ -56,6 +56,10 @@ export default function AdminSupplierAgentProfilePage() {
   const [loading, setLoading] = useState(true);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [editPaymentId, setEditPaymentId] = useState<string | null>(null);
+  const [editPaymentForm, setEditPaymentForm] = useState({ amount: "", payment_method: "cash", date: "", notes: "" });
+  const [showEditPaymentModal, setShowEditPaymentModal] = useState(false);
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
   // Date filter
   const [dateFrom, setDateFrom] = useState("");
@@ -127,6 +131,31 @@ export default function AdminSupplierAgentProfilePage() {
     } catch (err: any) {
       toast({ title: "ত্রুটি", description: err.message, variant: "destructive" });
     } finally { setPaymentLoading(false); }
+  };
+
+  const startEditPayment = (p: any) => {
+    setEditPaymentId(p.id);
+    setEditPaymentForm({ amount: String(p.amount), payment_method: p.payment_method || "cash", date: p.date || "", notes: p.notes || "" });
+    setShowEditPaymentModal(true);
+  };
+
+  const handleSavePaymentEdit = async () => {
+    if (!editPaymentId) return;
+    const { error } = await supabase.from("supplier_agent_payments").update({
+      amount: parseFloat(editPaymentForm.amount), payment_method: editPaymentForm.payment_method,
+      date: editPaymentForm.date || undefined, notes: editPaymentForm.notes || null,
+    }).eq("id", editPaymentId);
+    if (error) { toast({ title: "আপডেট ব্যর্থ", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "পেমেন্ট আপডেট হয়েছে" });
+    setEditPaymentId(null); setShowEditPaymentModal(false); loadData();
+  };
+
+  const confirmDeletePayment = async () => {
+    if (!deletePaymentId) return;
+    const { error } = await supabase.from("supplier_agent_payments").delete().eq("id", deletePaymentId);
+    if (error) { toast({ title: "মুছতে ব্যর্থ", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "পেমেন্ট মুছে ফেলা হয়েছে" });
+    setDeletePaymentId(null); loadData();
   };
 
   if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
@@ -277,7 +306,8 @@ export default function AdminSupplierAgentProfilePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-border text-left text-muted-foreground text-xs">
-                  <th className="pb-2 pr-3">তারিখ</th><th className="pb-2 pr-3">সার্ভিস</th><th className="pb-2 pr-3">পরিমাণ</th><th className="pb-2 pr-3">পদ্ধতি</th><th className="pb-2 pr-3">বুকিং</th><th className="pb-2">নোট</th>
+                  <th className="pb-2 pr-3">তারিখ</th><th className="pb-2 pr-3">সার্ভিস</th><th className="pb-2 pr-3">পরিমাণ</th><th className="pb-2 pr-3">পদ্ধতি</th><th className="pb-2 pr-3">বুকিং</th><th className="pb-2 pr-3">নোট</th>
+                  {!isViewer && <th className="pb-2 w-16">অ্যাকশন</th>}
                 </tr></thead>
                 <tbody>
                   {filteredPayments.map((p: any) => {
@@ -291,7 +321,15 @@ export default function AdminSupplierAgentProfilePage() {
                         <td className="py-2 pr-3 font-bold text-emerald-500">{fmt(p.amount)}</td>
                         <td className="py-2 pr-3 capitalize">{p.payment_method}</td>
                         <td className="py-2 pr-3 text-xs font-mono text-primary">{p.booking_id ? bookings.find(b => b.id === p.booking_id)?.tracking_id || "—" : "General"}</td>
-                        <td className="py-2 text-xs text-muted-foreground">{cleanNotes}</td>
+                        <td className="py-2 pr-3 text-xs text-muted-foreground">{cleanNotes}</td>
+                        {!isViewer && (
+                          <td className="py-2">
+                            <div className="flex gap-1">
+                              <button onClick={() => startEditPayment(p)} className="text-primary hover:text-primary/80 p-1"><Pencil className="h-3.5 w-3.5" /></button>
+                              <button onClick={() => setDeletePaymentId(p.id)} className="text-destructive hover:text-destructive/80 p-1"><Trash2 className="h-3.5 w-3.5" /></button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -387,6 +425,44 @@ export default function AdminSupplierAgentProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Payment Modal */}
+      <Dialog open={showEditPaymentModal} onOpenChange={(o) => { if (!o) { setShowEditPaymentModal(false); setEditPaymentId(null); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>সাপ্লায়ার পেমেন্ট সম্পাদনা</DialogTitle><DialogDescription>পেমেন্ট তথ্য পরিবর্তন করুন</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <div><label className="text-xs text-muted-foreground block mb-1">পরিমাণ (৳) *</label>
+              <Input type="number" min={0} value={editPaymentForm.amount} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, amount: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground block mb-1">পদ্ধতি</label>
+              <Select value={editPaymentForm.payment_method} onValueChange={(v) => setEditPaymentForm({ ...editPaymentForm, payment_method: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
+              </Select></div>
+            <div><label className="text-xs text-muted-foreground block mb-1">তারিখ</label>
+              <Input type="date" value={editPaymentForm.date} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, date: e.target.value })} /></div>
+            <div><label className="text-xs text-muted-foreground block mb-1">নোট</label>
+              <Input value={editPaymentForm.notes} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, notes: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowEditPaymentModal(false); setEditPaymentId(null); }}>বাতিল</Button>
+            <Button onClick={handleSavePaymentEdit}>আপডেট করুন</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Payment Confirmation */}
+      {deletePaymentId && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setDeletePaymentId(null)}>
+          <div className="bg-card border border-border rounded-xl p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-heading font-bold text-lg mb-2">পেমেন্ট মুছবেন?</h3>
+            <p className="text-sm text-muted-foreground mb-4">এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।</p>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setDeletePaymentId(null)}>বাতিল</Button>
+              <Button variant="destructive" onClick={confirmDeletePayment}>মুছুন</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
