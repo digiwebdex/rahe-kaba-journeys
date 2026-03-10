@@ -45,6 +45,7 @@ export default function AdminPaymentsPage() {
   const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [editType, setEditType] = useState<PaymentType>("customer");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteType, setDeleteType] = useState<PaymentType>("customer");
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,6 +74,7 @@ export default function AdminPaymentsPage() {
   const [viewPayment, setViewPayment] = useState<any>(null);
   const [expandedMoallemId, setExpandedMoallemId] = useState<string | null>(null);
   const [expandedSupplierId, setExpandedSupplierId] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const fetchPayments = async () => {
     const [payRes, moallemPayRes, supplierPayRes, walletRes, profileRes] = await Promise.all([
       supabase.from("payments").select("*, bookings(tracking_id, total_amount, paid_amount, due_amount, guest_name, guest_passport, num_travelers, status, packages(name, type, duration_days))").order("created_at", { ascending: false }),
