@@ -133,7 +133,7 @@ export default function AdminAccountingPage() {
       else toast.error(error.message);
       return;
     }
-    toast.success("খরচ রেকর্ড হয়েছে");
+    toast.success("Expense recorded successfully");
     setShowForm(false); setForm({ ...EMPTY_FORM });
     fetchData(); fetchProfitViews();
   };
@@ -220,7 +220,7 @@ export default function AdminAccountingPage() {
     try {
       if (tab === "cashbook") {
         if (!todayCashbookRows.length) {
-          toast.error("আজকের ক্যাশবুক ডেটা নেই");
+          toast.error("No cashbook data for today");
           return;
         }
         await exportPDF({
@@ -270,7 +270,7 @@ export default function AdminAccountingPage() {
     try {
       if (tab === "cashbook") {
         if (!todayCashbookRows.length) {
-          toast.error("আজকের ক্যাশবুক ডেটা নেই");
+          toast.error("No cashbook data for today");
           return;
         }
         exportExcel({
@@ -328,11 +328,11 @@ export default function AdminAccountingPage() {
   return (
     <div>
       <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-        <h2 className="font-heading text-xl font-bold">হিসাব ও মুনাফা</h2>
+        <h2 className="font-heading text-xl font-bold">Accounting & Profit</h2>
         <div className="flex items-center gap-2">
           {canModify && tab === "expenses" && (
             <button onClick={() => setShowForm(true)} className="inline-flex items-center gap-1.5 text-sm bg-gradient-gold text-primary-foreground font-semibold px-4 py-2 rounded-md hover:opacity-90 transition-opacity shadow-gold">
-              <Plus className="h-4 w-4" /> নতুন খরচ
+              <Plus className="h-4 w-4" /> New Expense
             </button>
           )}
           <button onClick={handleTopExportPDF} className="inline-flex items-center gap-1 text-xs bg-secondary px-3 py-1.5 rounded-md hover:bg-muted transition-colors"><FileDown className="h-3.5 w-3.5" />PDF</button>
@@ -343,11 +343,11 @@ export default function AdminAccountingPage() {
       {/* Daily Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div className="bg-card border border-emerald/30 rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">আজকের আয় ({today})</p>
+          <p className="text-sm text-muted-foreground">Today's Income ({today})</p>
           <p className="text-2xl font-heading font-bold text-emerald">{fmt(dailyIncome)}</p>
         </div>
         <div className="bg-card border border-destructive/30 rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">আজকের খরচ ({today})</p>
+          <p className="text-sm text-muted-foreground">Today's Expense ({today})</p>
           <p className="text-2xl font-heading font-bold text-destructive">{fmt(dailyExpense)}</p>
         </div>
       </div>
@@ -355,15 +355,15 @@ export default function AdminAccountingPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">মোট আয়</p>
+          <p className="text-sm text-muted-foreground">Total Income</p>
           <p className="text-2xl font-heading font-bold text-primary">{fmt(revenue)}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">মোট খরচ</p>
+          <p className="text-sm text-muted-foreground">Total Expense</p>
           <p className="text-2xl font-heading font-bold text-destructive">{fmt(totalExpenses)}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">নীট মুনাফা</p>
+          <p className="text-sm text-muted-foreground">Net Profit</p>
           <p className={`text-2xl font-heading font-bold ${netProfit >= 0 ? "text-emerald" : "text-destructive"}`}>{fmt(netProfit)}</p>
         </div>
       </div>
@@ -398,14 +398,14 @@ export default function AdminAccountingPage() {
           <div className="flex flex-wrap gap-3 mb-4 items-center">
             <Filter className="h-4 w-4 text-muted-foreground" />
             <select className={inputClass + " w-auto"} value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-              <option value="all">সকল ধরন</option>
+              <option value="all">All Types</option>
               {EXPENSE_TYPES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
             </select>
             <select className={inputClass + " w-auto"} value={filterAssign} onChange={(e) => setFilterAssign(e.target.value)}>
-              <option value="all">সকল অ্যাসাইনমেন্ট</option>
+              <option value="all">All Assignments</option>
               {ASSIGN_TO.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
             </select>
-            <span className="text-xs text-muted-foreground ml-auto">{filtered.length} টি খরচ</span>
+            <span className="text-xs text-muted-foreground ml-auto">{filtered.length} expenses</span>
           </div>
 
           {/* Expense List */}
@@ -452,7 +452,7 @@ export default function AdminAccountingPage() {
                 )}
               </div>
             ))}
-            {filtered.length === 0 && <p className="text-center text-muted-foreground py-12">কোনো খরচ পাওয়া যায়নি।</p>}
+            {filtered.length === 0 && <p className="text-center text-muted-foreground py-12">No expenses found.</p>}
           </div>
         </>
       )}
@@ -579,7 +579,7 @@ export default function AdminAccountingPage() {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-heading">নতুন খরচ যোগ করুন</DialogTitle>
+            <DialogTitle className="font-heading">Add New Expense</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

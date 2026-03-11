@@ -123,10 +123,10 @@ export default function CustomerSearchSelect({ onSelect, selectedId }: Props) {
           )}
           {!loading && query.trim() && results.length === 0 && (
             <div className="px-4 py-3 text-center">
-              <p className="text-xs text-muted-foreground mb-1">কোনো কাস্টমার পাওয়া যায়নি</p>
+              <p className="text-xs text-muted-foreground mb-1">No customer found</p>
               <div className="flex items-center gap-1 justify-center text-xs text-primary">
                 <UserPlus className="h-3 w-3" />
-                <span>নিচে ম্যানুয়ালি তথ্য দিন</span>
+                <span>Enter details manually below</span>
               </div>
             </div>
           )}

@@ -40,7 +40,7 @@ export default function InvoicePage() {
       .single();
 
     if (bkErr || !bk) {
-      setError("বুকিং পাওয়া যায়নি। ট্র্যাকিং আইডি চেক করুন।");
+      setError("Booking not found. Please check the tracking ID.");
       setLoading(false);
       return;
     }
