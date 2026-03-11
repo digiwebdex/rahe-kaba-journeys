@@ -594,7 +594,7 @@ export default function AdminAccountingPage() {
                   onChange={(e) => setForm({ ...form, amount: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">খরচের ধরন *</label>
+                <label className="text-xs text-muted-foreground block mb-1">Expense Type *</label>
                 <select className={inputClass} value={form.expense_type} onChange={(e) => setForm({ ...form, expense_type: e.target.value })}>
                   {EXPENSE_TYPES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                 </select>
