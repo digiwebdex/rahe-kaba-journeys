@@ -611,7 +611,7 @@ export default function AdminAccountingPage() {
                   onChange={(e) => setForm({ ...form, date: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">অ্যাসাইন করুন</label>
+                <label className="text-xs text-muted-foreground block mb-1">Assign To</label>
                 <select className={inputClass} value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value, booking_id: "", customer_id: "", package_id: "" })}>
                   {ASSIGN_TO.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
