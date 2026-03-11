@@ -469,7 +469,7 @@ export default function AdminBookingsPage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="text-xs text-muted-foreground block mb-1">Selling Price/Person (৳)</label>
+                  <label className="text-xs text-muted-foreground block mb-1">Selling Price/Person (BDT)</label>
                   <input className={inputClass} type="number" min={0} value={editForm.selling_price_per_person}
                     onChange={(e) => setEditForm((f: any) => ({ ...f, selling_price_per_person: e.target.value }))} />
                 </div>
