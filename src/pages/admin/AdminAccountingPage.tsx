@@ -667,7 +667,7 @@ export default function AdminAccountingPage() {
                   <div className="col-span-2"><span className="text-muted-foreground text-xs block">Booking</span><span className="font-medium">📋 {getBookingLabel(viewExpense.booking_id)}</span></div>
                 )}
                 {viewExpense.customer_id && (
-                  <div className="col-span-2"><span className="text-muted-foreground text-xs block">কাস্টমার</span><span className="font-medium">👤 {getCustomerLabel(viewExpense.customer_id)}</span></div>
+                  <div className="col-span-2"><span className="text-muted-foreground text-xs block">Customer</span><span className="font-medium">👤 {getCustomerLabel(viewExpense.customer_id)}</span></div>
                 )}
                 {viewExpense.package_id && (
                   <div className="col-span-2"><span className="text-muted-foreground text-xs block">প্যাকেজ</span><span className="font-medium">📦 {getPackageLabel(viewExpense.package_id)}</span></div>
