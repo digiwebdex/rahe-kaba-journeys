@@ -560,7 +560,7 @@ async function generateIndividualInvoice(
         Number(booking.total_amount).toLocaleString(),
       ],
     ],
-    styles: { fontSize: 8, cellPadding: 3, font: "helvetica" },
+    styles: { fontSize: 8, cellPadding: 3, font: "NotoSansBengali" },
     headStyles: {
       fillColor: [DARK.r, DARK.g, DARK.b],
       textColor: [255, 255, 255],
