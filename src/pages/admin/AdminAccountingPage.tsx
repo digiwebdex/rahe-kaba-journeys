@@ -452,7 +452,7 @@ export default function AdminAccountingPage() {
                 )}
               </div>
             ))}
-            {filtered.length === 0 && <p className="text-center text-muted-foreground py-12">কোনো খরচ পাওয়া যায়নি।</p>}
+            {filtered.length === 0 && <p className="text-center text-muted-foreground py-12">No expenses found.</p>}
           </div>
         </>
       )}
