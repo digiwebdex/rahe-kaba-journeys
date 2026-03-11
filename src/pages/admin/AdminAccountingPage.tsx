@@ -633,9 +633,9 @@ export default function AdminAccountingPage() {
             )}
 
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">নোট</label>
+              <label className="text-xs text-muted-foreground block mb-1">Notes</label>
               <textarea className={inputClass + " resize-none"} rows={2} value={form.note}
-                onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="অতিরিক্ত তথ্য..." maxLength={500} />
+                onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="Additional info..." maxLength={500} />
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
