@@ -589,7 +589,7 @@ export default function AdminAccountingPage() {
                   onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={200} />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">পরিমাণ (৳) *</label>
+                <label className="text-xs text-muted-foreground block mb-1">Amount (BDT) *</label>
                 <input className={inputClass} placeholder="0" type="number" step="0.01" min="1" required value={form.amount}
                   onChange={(e) => setForm({ ...form, amount: e.target.value })} />
               </div>
