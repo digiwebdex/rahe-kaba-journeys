@@ -887,7 +887,7 @@ export default function AdminPaymentsPage() {
 
             {/* Service Type Selection */}
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">সার্ভিস ধরন (ঐচ্ছিক)</label>
+              <label className="text-xs text-muted-foreground block mb-1">Service Type (Optional)</label>
               <select className={inputClass} value={addForm.service_type} onChange={(e) => setAddForm({ ...addForm, service_type: e.target.value })}>
                 {SERVICE_TYPES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
