@@ -129,7 +129,7 @@ export default function AdminAccountingPage() {
     };
     const { error } = await supabase.from("expenses").insert(payload);
     if (error) {
-      if (error.message?.includes("Insufficient wallet balance")) toast.error("ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই");
+      if (error.message?.includes("Insufficient wallet balance")) toast.error("Insufficient wallet balance");
       else toast.error(error.message);
       return;
     }

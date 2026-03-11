@@ -146,7 +146,7 @@ export default function AdminPaymentsPage() {
     const ext = receiptFile.name.split(".").pop();
     const path = `${paymentType}/${paymentId}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("payment-receipts").upload(path, receiptFile, { upsert: true });
-    if (error) { toast.error("রিসিট আপলোড ব্যর্থ: " + error.message); return null; }
+    if (error) { toast.error("Receipt upload failed: " + error.message); return null; }
     return path;
   };
 
