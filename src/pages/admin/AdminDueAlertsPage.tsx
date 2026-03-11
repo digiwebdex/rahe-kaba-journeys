@@ -138,7 +138,7 @@ export default function AdminDueAlertsPage() {
     const profile = getProfile(p);
     const name = profile?.full_name || "Customer";
     const trackingId = p.bookings?.tracking_id || "N/A";
-    return `Dear ${name}, your installment #${p.installment_number || 1} of ৳${Number(p.amount).toLocaleString()} for booking ${trackingId} is due on ${format(new Date(p.due_date), "dd MMM yyyy")}. Please make your payment at the earliest. Thank you!`;
+    return `Dear ${name}, your installment #${p.installment_number || 1} of BDT ${Number(p.amount).toLocaleString()} for booking ${trackingId} is due on ${format(new Date(p.due_date), "dd MMM yyyy")}. Please make your payment at the earliest. Thank you!`;
   };
 
   const sendWhatsApp = (p: PaymentRow) => {
