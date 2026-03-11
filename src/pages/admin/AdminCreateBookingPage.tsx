@@ -251,7 +251,7 @@ export default function AdminCreateBookingPage() {
                 onChange={(e) => setForm(f => ({ ...f, selling_price_per_person: Math.max(0, parseFloat(e.target.value) || 0) }))} />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Discount (৳)</label>
+              <label className="text-xs text-muted-foreground block mb-1">Discount (BDT)</label>
               <input className={inputClass} type="number" min={0} value={form.discount}
                 onChange={(e) => setForm(f => ({ ...f, discount: Math.max(0, parseFloat(e.target.value) || 0) }))} />
             </div>
