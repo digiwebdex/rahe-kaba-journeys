@@ -26,6 +26,7 @@ export default function AdminCreateBookingPage() {
   const [bookingType, setBookingType] = useState<"individual" | "family">("individual");
 
   // Individual form
+  const [walletAccounts, setWalletAccounts] = useState<any[]>([]);
   const [form, setForm] = useState({
     guest_name: "",
     guest_phone: "",
@@ -36,6 +37,8 @@ export default function AdminCreateBookingPage() {
     selling_price_per_person: 0,
     discount: 0,
     paid_amount: 0,
+    payment_method: "cash",
+    wallet_account_id: "",
     status: "pending",
     notes: "",
     moallem_id: "",
