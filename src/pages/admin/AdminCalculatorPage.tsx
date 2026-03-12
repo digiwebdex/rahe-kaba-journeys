@@ -47,6 +47,15 @@ export default function AdminCalculatorPage() {
     setItems(items.map(i => i.id === id ? { ...i, [field]: value } : i));
   };
 
+  const handleReset = () => {
+    setGroupName("");
+    setGroupDate("");
+    setTotalHajji(0);
+    setSellingPricePerPerson(0);
+    setItems(DEFAULT_ITEMS.map(i => ({ ...i, unitPrice: 0 })));
+    toast.success("ক্যালকুলেটর রিসেট হয়েছে");
+  };
+
   const costPerPerson = useMemo(() => items.reduce((s, i) => s + Number(i.unitPrice || 0), 0), [items]);
   const totalCost = costPerPerson * totalHajji;
   const profitPerPerson = sellingPricePerPerson - costPerPerson;
