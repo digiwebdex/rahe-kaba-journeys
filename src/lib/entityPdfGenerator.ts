@@ -217,7 +217,7 @@ export async function generateMoallemPdf(data: MoallemPdfData, company: CompanyI
       startY: y,
       head: [["Amount", "Date", "Method", "Notes"]],
       body: data.moallemPayments.map(p => [fmt(p.amount), fmtDate(p.date), p.method, p.notes || "—"]),
-      styles: { fontSize: 7, font: "NotoSansBengali" },
+      styles: { fontSize: 7, font: "helvetica" },
       headStyles: { fillColor: [60, 70, 85] },
       margin: { left: 14, right: 14 },
       didDrawCell: bengaliCellHook,
