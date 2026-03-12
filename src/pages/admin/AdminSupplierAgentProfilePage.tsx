@@ -307,7 +307,7 @@ export default function AdminSupplierAgentProfilePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-border text-left text-muted-foreground text-xs">
-                  <th className="pb-2 pr-3">Date</th><th className="pb-2 pr-3">Service</th><th className="pb-2 pr-3">Amount</th><th className="pb-2 pr-3">Method</th><th className="pb-2 pr-3">Booking</th><th className="pb-2 pr-3">Notes</th>
+                  <th className="pb-2 pr-3">Date</th><th className="pb-2 pr-3">Service</th><th className="pb-2 pr-3">Amount</th><th className="pb-2 pr-3">Method</th><th className="pb-2 pr-3">Notes</th>
                   {!isViewer && <th className="pb-2 w-16">Action</th>}
                 </tr></thead>
                 <tbody>
