@@ -29,9 +29,9 @@ const DEFAULT_ITEMS: CostItem[] = [
 const fmt = (n: number) => `BDT ${n.toLocaleString("en-IN")}`;
 
 export default function AdminCalculatorPage() {
-  const [groupName, setGroupName] = useState("");
+  const [groupName, setGroupName] = useState<string | null>(null);
   const [groupDate, setGroupDate] = useState("");
-  const [totalHajji, setTotalHajji] = useState(0);
+  const [totalHajji, setTotalHajji] = useState<number | null>(null);
   const [sellingPricePerPerson, setSellingPricePerPerson] = useState(0);
   const [items, setItems] = useState<CostItem[]>(DEFAULT_ITEMS);
 
@@ -48,19 +48,20 @@ export default function AdminCalculatorPage() {
   };
 
   const handleReset = () => {
-    setGroupName("");
+    setGroupName(null);
     setGroupDate("");
-    setTotalHajji(0);
+    setTotalHajji(null);
     setSellingPricePerPerson(0);
     setItems(DEFAULT_ITEMS.map(i => ({ ...i, unitPrice: 0 })));
     toast.success("ক্যালকুলেটর রিসেট হয়েছে");
   };
 
+  const pilgrimCount = totalHajji ?? 0;
   const costPerPerson = useMemo(() => items.reduce((s, i) => s + Number(i.unitPrice || 0), 0), [items]);
-  const totalCost = costPerPerson * totalHajji;
+  const totalCost = costPerPerson * pilgrimCount;
   const profitPerPerson = sellingPricePerPerson - costPerPerson;
-  const totalProfit = profitPerPerson * totalHajji;
-  const totalRevenue = sellingPricePerPerson * totalHajji;
+  const totalProfit = profitPerPerson * pilgrimCount;
+  const totalRevenue = sellingPricePerPerson * pilgrimCount;
 
   const handleDownloadPdf = async () => {
     try {
