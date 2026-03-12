@@ -357,9 +357,16 @@ export async function generateSupplierPdf(data: SupplierPdfData, company: Compan
       startY: y,
       head: [["Category", "Amount", "Date", "Method", "Notes"]],
       body: data.agentPayments.map(p => [p.category || "—", fmt(p.amount), fmtDate(p.date), p.method, p.notes || "—"]),
-      styles: { fontSize: 7, font: "NotoSansBengali" },
+      styles: { fontSize: 7, font: "NotoSansBengali", cellPadding: 2 },
       headStyles: { fillColor: [60, 70, 85] },
       margin: { left: 14, right: 14 },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 22 },
+        4: { cellWidth: 'auto' },
+      },
       didDrawCell: bengaliCellHook,
     });
     y = (doc as any).lastAutoTable?.finalY + 8 || y + 20;
