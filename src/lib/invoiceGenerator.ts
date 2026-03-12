@@ -845,7 +845,13 @@ export async function generateInvoice(
     moallemName = await fetchMoallemName(booking.moallem_id);
   }
 
-  const fallbackPackageName = cleanText(booking.packages?.name, "N/A");
+  let fallbackPackageName = cleanText(booking.packages?.name);
+  if (!fallbackPackageName && booking.package_id) {
+    const packageMap = await fetchPackageNameMap([booking.package_id]);
+    fallbackPackageName = cleanText(packageMap[booking.package_id]);
+  }
+  fallbackPackageName = cleanText(fallbackPackageName, "N/A");
+
   const providedMembers = normalizeMembers(options.members || [], fallbackPackageName);
   const dbMembers = providedMembers.length === 0 && booking.id
     ? await fetchBookingMembers(booking.id, fallbackPackageName)
