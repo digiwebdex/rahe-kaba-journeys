@@ -35,7 +35,7 @@ const financeMenuItems = [
 ];
 
 const toolsMenuItems = [
-  { title: "Due Alerts",      url: "/admin/due-alerts",     icon: AlertTriangle,   roles: ["admin", "accountant", "booking", "viewer"] },
+  
   { title: "Notifications",   url: "/admin/notifications",  icon: Bell,            roles: ["admin"] },
   { title: "CMS",             url: "/admin/cms",            icon: Pencil,          roles: ["admin", "cms"] },
   { title: "Settings",        url: "/admin/settings",       icon: Settings,        roles: ["admin"] },
