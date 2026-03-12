@@ -953,11 +953,19 @@ export async function generateInvoice(
     || providedMembers.length > 0
     || dbMembers.length > 0;
 
-  const rawInvoiceMembers = providedMembers.length > 0
+  const rawInvoiceMembersBase = providedMembers.length > 0
     ? providedMembers
     : dbMembers.length > 0
       ? dbMembers
       : (hasFamilySignal ? buildFallbackMembers(normalizedBooking, customer) : []);
+
+  const fallbackMembers = hasFamilySignal ? buildFallbackMembers(normalizedBooking, customer) : [];
+  const rawInvoiceMembers = rawInvoiceMembersBase.length >= travelerCount
+    ? rawInvoiceMembersBase
+    : [
+        ...rawInvoiceMembersBase,
+        ...fallbackMembers.slice(rawInvoiceMembersBase.length, travelerCount),
+      ];
 
   const missingPackageIds = rawInvoiceMembers
     .filter((m) => !cleanText(m.packages?.name) && Boolean(m.package_id))
@@ -966,8 +974,28 @@ export async function generateInvoice(
 
   const customerName = cleanText(customer.full_name, "Primary Traveler");
   const customerPassport = cleanText(customer.passport_number);
-  const fallbackGuestNames = extractDelimitedValues(normalizedBooking.guest_name);
-  const fallbackGuestPassports = extractDelimitedValues(normalizedBooking.guest_passport);
+  let fallbackGuestNames = extractDelimitedValues(normalizedBooking.guest_name);
+  let fallbackGuestPassports = extractDelimitedValues(normalizedBooking.guest_passport);
+
+  const hasAnyMeaningfulMemberName = rawInvoiceMembers.some((member) => {
+    const rawName = cleanText(
+      member.full_name,
+      (member as any)?.traveler_name,
+      (member as any)?.travelerName,
+      (member as any)?.member_name,
+      (member as any)?.memberName
+    );
+    return hasMeaningfulName(rawName);
+  });
+
+  if (hasFamilySignal && normalizedBooking.tracking_id && (!hasAnyMeaningfulMemberName || fallbackGuestNames.length < travelerCount)) {
+    const latestGuestFallback = await fetchBookingGuestFallback(normalizedBooking.tracking_id);
+    const latestGuestNames = extractDelimitedValues(latestGuestFallback?.guest_name);
+    const latestGuestPassports = extractDelimitedValues(latestGuestFallback?.guest_passport);
+
+    if (latestGuestNames.length > fallbackGuestNames.length) fallbackGuestNames = latestGuestNames;
+    if (latestGuestPassports.length > fallbackGuestPassports.length) fallbackGuestPassports = latestGuestPassports;
+  }
 
   const invoiceMembers = rawInvoiceMembers.map((member, index) => {
     const resolvedPackageName = cleanText(
@@ -986,10 +1014,10 @@ export async function generateInvoice(
     );
 
     const resolvedName = cleanText(
-      isGenericTravelerLabel(rawMemberName) ? "" : rawMemberName,
+      hasMeaningfulName(rawMemberName) ? rawMemberName : "",
       fallbackGuestNames[index],
       index === 0 ? customerName : "",
-      `Traveler ${index + 1}`
+      "—"
     );
 
     const resolvedPassport = cleanText(
