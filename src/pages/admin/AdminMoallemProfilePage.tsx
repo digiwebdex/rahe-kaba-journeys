@@ -387,10 +387,7 @@ export default function AdminMoallemProfilePage() {
             <Button variant="outline" size="sm" onClick={handleDownloadStatement}><Download className="h-4 w-4 mr-1" /> PDF</Button>
           </div>
           {!isViewer && (
-            <>
               <Button variant="outline" size="sm" onClick={() => setShowCommissionForm(true)}><Plus className="h-4 w-4 mr-1" /> Commission</Button>
-              <Button size="sm" onClick={() => setShowPaymentForm(true)}><Plus className="h-4 w-4 mr-1" /> Payment</Button>
-            </>
           )}
           <Badge variant={moallem.status === "active" ? "default" : "secondary"}>{moallem.status === "active" ? "Active" : "Inactive"}</Badge>
         </div>

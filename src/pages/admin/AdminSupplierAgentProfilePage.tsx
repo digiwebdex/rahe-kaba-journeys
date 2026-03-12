@@ -235,7 +235,7 @@ export default function AdminSupplierAgentProfilePage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={handleDownloadStatement}><Download className="h-4 w-4 mr-1" /> Full Statement PDF</Button>
-          {!isViewer && <Button size="sm" onClick={() => setShowPaymentForm(true)}><Plus className="h-4 w-4 mr-1" /> Payment</Button>}
+          
           <Badge variant={agent.status === "active" ? "default" : "secondary"}>{agent.status === "active" ? "Active" : "Inactive"}</Badge>
         </div>
       </div>
