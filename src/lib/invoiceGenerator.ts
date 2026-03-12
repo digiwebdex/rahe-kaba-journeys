@@ -156,6 +156,12 @@ const extractDelimitedValues = (value?: string | null): string[] => {
     .filter(Boolean);
 };
 
+const isGenericTravelerLabel = (value?: string | null): boolean => {
+  const normalized = cleanText(value);
+  if (!normalized) return false;
+  return /^travell?er\s*#?\d+$/i.test(normalized);
+};
+
 async function fetchPackageNameMap(packageIds: string[]): Promise<Record<string, string>> {
   const uniqueIds = Array.from(new Set(packageIds.filter(Boolean)));
   if (uniqueIds.length === 0) return {};
