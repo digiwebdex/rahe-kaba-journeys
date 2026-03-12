@@ -644,19 +644,44 @@ export default function AdminBookingsPage() {
               {/* Family Members Editing Section */}
               {isEditingFamily && (
                 <div className="border border-primary/30 rounded-lg p-3 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <h4 className="text-sm font-semibold flex items-center gap-1.5">
                       <User className="h-4 w-4 text-primary" />
                       Family Members ({editMembers.length})
                     </h4>
-                    <Badge variant="outline" className="text-[10px]">Family Booking</Badge>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const defaultPrice = toMoney(editForm.selling_price_per_person || b.selling_price_per_person || 0);
+                          const nextCount = editMembers.length + 1;
+                          setEditMembers((prev: any[]) => ([
+                            ...prev,
+                            {
+                              temp_id: `tmp-${crypto.randomUUID()}`,
+                              full_name: "",
+                              passport_number: "",
+                              package_id: b.package_id || null,
+                              selling_price: defaultPrice,
+                              discount: 0,
+                              final_price: defaultPrice,
+                            },
+                          ]));
+                          setEditForm((prev: any) => ({ ...prev, booking_type: "family", num_travelers: Math.max(Number(prev.num_travelers || 1), nextCount) }));
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-primary text-primary-foreground"
+                      >
+                        <Plus className="h-3 w-3" /> Add Traveler
+                      </button>
+                      <Badge variant="outline" className="text-[10px]">Family Booking</Badge>
+                    </div>
                   </div>
                   {editMembers.length === 0 ? (
                     <p className="text-xs text-muted-foreground">No traveler rows found yet for this family booking.</p>
                   ) : (
                     <>
                       {editMembers.map((m: any, idx: number) => (
-                        <div key={m.id} className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-secondary/30 rounded-md p-2">
+                        <div key={m.id || m.temp_id || `member-${idx}`} className="grid grid-cols-2 sm:grid-cols-6 gap-2 bg-secondary/30 rounded-md p-2">
                           <div>
                             <label className="text-[10px] text-muted-foreground block mb-0.5">Name</label>
                             <input className={inputClass + " text-xs"} value={m.full_name}
@@ -676,12 +701,17 @@ export default function AdminBookingsPage() {
                               }} />
                           </div>
                           <div>
+                            <label className="text-[10px] text-muted-foreground block mb-0.5">Package</label>
+                            <div className={`${inputClass} text-xs bg-muted/50`}>{b.packages?.name || "N/A"}</div>
+                          </div>
+                          <div>
                             <label className="text-[10px] text-muted-foreground block mb-0.5">Selling Price</label>
                             <input className={inputClass + " text-xs"} type="number" min={0} value={m.selling_price}
                               onChange={(e) => {
                                 const updated = [...editMembers];
-                                const sp = Number(e.target.value) || 0;
-                                updated[idx] = { ...updated[idx], selling_price: sp, final_price: sp - Number(updated[idx].discount || 0) };
+                                const sp = toMoney(e.target.value);
+                                const discount = Math.min(toMoney(updated[idx].discount), sp);
+                                updated[idx] = { ...updated[idx], selling_price: sp, discount, final_price: Math.max(0, sp - discount) };
                                 setEditMembers(updated);
                               }} />
                           </div>
@@ -690,8 +720,9 @@ export default function AdminBookingsPage() {
                             <input className={inputClass + " text-xs"} type="number" min={0} value={m.discount}
                               onChange={(e) => {
                                 const updated = [...editMembers];
-                                const d = Number(e.target.value) || 0;
-                                updated[idx] = { ...updated[idx], discount: d, final_price: Number(updated[idx].selling_price || 0) - d };
+                                const selling = toMoney(updated[idx].selling_price);
+                                const d = Math.min(toMoney(e.target.value), selling);
+                                updated[idx] = { ...updated[idx], discount: d, final_price: Math.max(0, selling - d) };
                                 setEditMembers(updated);
                               }} />
                           </div>
