@@ -8,10 +8,6 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useCanSeeProfit } from "@/components/admin/AdminLayout";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
-import { useCanSeeProfit } from "@/components/admin/AdminLayout";
 
 interface Props {
   bookings: any[];
@@ -31,66 +27,38 @@ interface Props {
 }
 
 const fmt = (n: number) => `BDT ${n.toLocaleString()}`;
-const ttStyle = { backgroundColor: "hsl(220, 18%, 14%)", border: "1px solid hsl(220, 15%, 20%)", borderRadius: "8px", color: "hsl(40, 20%, 92%)", fontSize: "12px" };
 
 const AdminDashboardCharts = ({
-  bookings, payments, expenses = [], accounts = [], financialSummary,
+  bookings, payments, expenses = [], accounts = [],
   moallemPayments = [], supplierPayments = [], commissionPayments = [],
-  moallems = [], supplierAgents = [], supplierContracts = [], supplierContractPayments = [],
+  moallems = [], supplierContracts = [], supplierContractPayments = [],
   dailyCashbook = [],
-  onMarkPaid
 }: Props) => {
   const navigate = useNavigate();
   const canSeeProfit = useCanSeeProfit();
   const [showDueCustomers, setShowDueCustomers] = useState(false);
 
-  // ══════════════════════════════════════════════════════════
-  // ── DERIVED FINANCIAL CALCULATIONS (from source data) ────
-  // ══════════════════════════════════════════════════════════
-
   const financials = useMemo(() => {
-    // ─── TOTAL SALES: Sum of all booking selling amounts ───
     const totalSales = bookings.reduce((s, b) => s + Number(b.total_amount || 0), 0);
     const totalHajji = bookings.reduce((s, b) => s + Number(b.num_travelers || 0), 0);
 
-    // ─── INCOME RECEIVED: All money that came IN ───
-    // 1. Customer payments (completed)
     const customerPaymentsIn = payments
       .filter(p => p.status === "completed")
       .reduce((s, p) => s + Number(p.amount || 0), 0);
-
-    // 2. Moallem deposits (income from moallems)
     const moallemDepositsIn = moallemPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
-
-    // 3. Daily cashbook income entries
     const cashbookIncome = dailyCashbook
       .filter(e => e.type === "income")
       .reduce((s, e) => s + Number(e.amount || 0), 0);
-
     const totalIncomeReceived = customerPaymentsIn + moallemDepositsIn + cashbookIncome;
 
-    // ─── EXPENSES PAID: All money that went OUT ───
-    // 1. Direct expenses (expense table)
     const directExpenses = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-
-    // 2. Supplier agent payments
     const supplierPaymentsOut = supplierPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
-
-    // 3. Commission payments to moallems
     const commissionPaymentsOut = commissionPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
-
-    // 4. Supplier contract payments
     const contractPaymentsOut = supplierContractPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
-
-    // 5. Daily cashbook expense entries
     const cashbookExpense = dailyCashbook
       .filter(e => e.type === "expense")
       .reduce((s, e) => s + Number(e.amount || 0), 0);
 
-    const totalExpensesPaid = directExpenses + supplierPaymentsOut + commissionPaymentsOut + contractPaymentsOut + cashbookExpense;
-
-    // ─── NET PROFIT: What remains as real profit ───
-    // Calculated from bookings: selling price - cost - commission - extra expenses
     const bookingProfit = bookings.reduce((s, b) => {
       const selling = Number(b.total_amount || 0);
       const cost = Number(b.total_cost || 0);
@@ -98,55 +66,30 @@ const AdminDashboardCharts = ({
       const extra = Number(b.extra_expense || 0);
       return s + (selling - cost - commission - extra);
     }, 0);
-
-    // Subtract non-booking direct expenses (general office, etc.)
     const generalExpenses = expenses
       .filter(e => !e.booking_id)
       .reduce((s, e) => s + Number(e.amount || 0), 0);
-
     const netProfit = bookingProfit - generalExpenses;
 
-    // ─── CASH BALANCE: Sum of all wallet accounts ───
     const walletAccounts = accounts.filter(a => a.type === "asset");
     const cashBalance = walletAccounts.reduce((s, a) => s + Number(a.balance || 0), 0);
 
-    // ─── RECEIVABLE (money owed TO us) ───
-    // Moallem due: use moallems table (auto-synced by triggers)
     const moallemDue = moallems.reduce((s, m) => s + Number(m.total_due || 0), 0);
-
-    // Customer due: from bookings
     const customerDue = bookings.reduce((s, b) => s + Number(b.due_amount || 0), 0);
-
     const totalReceivable = moallemDue + customerDue;
 
-    // ─── PAYABLE (money we owe TO others) ───
-    // Supplier due: from bookings + contract dues
     const bookingSupplierDue = bookings.reduce((s, b) => s + Number(b.supplier_due || 0), 0);
     const contractSupplierDue = supplierContracts.reduce((s, c) => s + Number(c.total_due || 0), 0);
     const supplierDue = bookingSupplierDue + contractSupplierDue;
-
-    // Commission due: from bookings
     const commissionDue = bookings.reduce((s, b) => s + Number(b.commission_due || 0), 0);
-
     const totalPayable = supplierDue + commissionDue;
 
     return {
-      totalSales,
-      totalHajji,
-      totalIncomeReceived,
-      totalExpensesPaid,
-      netProfit,
-      cashBalance,
-      moallemDue,
-      customerDue,
-      totalReceivable,
-      supplierDue,
-      commissionDue,
-      totalPayable,
+      totalSales, totalHajji, totalIncomeReceived, netProfit, cashBalance,
+      moallemDue, customerDue, totalReceivable, supplierDue, commissionDue, totalPayable,
     };
   }, [bookings, payments, expenses, accounts, moallemPayments, supplierPayments, commissionPayments, supplierContractPayments, supplierContracts, moallems, dailyCashbook]);
 
-  // Customers with dues
   const dueCustomers = useMemo(() => {
     const map: Record<string, { name: string; phone: string; totalDue: number; totalAmount: number; bookingCount: number; bookings: any[] }> = {};
     bookings.filter(b => Number(b.due_amount || 0) > 0).forEach(b => {
@@ -162,30 +105,6 @@ const AdminDashboardCharts = ({
     return Object.values(map).sort((a, b) => b.totalDue - a.totalDue);
   }, [bookings]);
 
-  // Monthly chart
-  const monthlyData = useMemo(() => {
-    const months: Record<string, { revenue: number; profit: number }> = {};
-    for (let i = 5; i >= 0; i--) {
-      months[format(startOfMonth(subMonths(new Date(), i)), "MMM yy")] = { revenue: 0, profit: 0 };
-    }
-    bookings.forEach(b => {
-      const key = format(new Date(b.created_at), "MMM yy");
-      if (months[key]) {
-        months[key].revenue += Number(b.total_amount || 0);
-        const selling = Number(b.total_amount || 0);
-        const cost = Number(b.total_cost || 0);
-        const commission = Number(b.total_commission || 0);
-        const extra = Number(b.extra_expense || 0);
-        months[key].profit += (selling - cost - commission - extra);
-      }
-    });
-    return Object.entries(months).map(([month, d]) => ({ month, ...d }));
-  }, [bookings]);
-
-  const recentBookings = bookings.slice(0, 5);
-  const recentPayments = payments.filter(p => p.status === "completed").slice(0, 5);
-
-  // Build KPI cards dynamically based on role
   const kpiCards = useMemo(() => {
     const cards: { label: string; value: string | number; icon: any; color: string; onClick: () => void }[] = [
       { label: "Total Sales", value: fmt(financials.totalSales), icon: DollarSign, color: "text-primary", onClick: () => navigate("/admin/bookings") },
@@ -205,7 +124,7 @@ const AdminDashboardCharts = ({
 
   return (
     <div className="space-y-5">
-      {/* ═══ TOP KPI CARDS ═══ */}
+      {/* ═══ KPI CARDS ═══ */}
       <div className={`grid grid-cols-2 sm:grid-cols-4 ${canSeeProfit ? "lg:grid-cols-7" : "lg:grid-cols-6"} gap-3`}>
         {kpiCards.map(k => (
           <div
@@ -256,78 +175,6 @@ const AdminDashboardCharts = ({
               <span className="text-destructive">{fmt(financials.supplierDue + (canSeeProfit ? financials.commissionDue : 0))}</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ═══ MONTHLY CHART ═══ */}
-      <div className="bg-card border border-border rounded-xl p-5">
-        <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-          <TrendingUp className="h-4 w-4 text-primary" /> Monthly Sales {canSeeProfit && "& Profit"}
-        </h3>
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 20%)" />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(220, 10%, 55%)" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: "hsl(220, 10%, 55%)" }} axisLine={false} tickLine={false} tickFormatter={v => `৳${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={ttStyle} formatter={(v: number) => fmt(v)} />
-              <Bar dataKey="revenue" fill="hsl(40, 65%, 48%)" radius={[4, 4, 0, 0]} name="Sales" />
-              {canSeeProfit && <Bar dataKey="profit" fill="hsl(160, 50%, 40%)" radius={[4, 4, 0, 0]} name="Profit" />}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* ═══ RECENT ACTIVITY ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" /> Recent Bookings
-            </h3>
-            <button onClick={() => navigate("/admin/bookings")} className="text-xs text-primary hover:underline">View All</button>
-          </div>
-          {recentBookings.length > 0 ? (
-            <div className="space-y-2">
-              {recentBookings.map(b => (
-                <div key={b.id} className="flex items-center justify-between bg-secondary/30 rounded-lg p-3 cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => navigate("/admin/bookings")}>
-                  <div>
-                    <p className="text-sm font-medium">{b.guest_name || "N/A"}</p>
-                    <p className="text-[10px] text-muted-foreground">{b.tracking_id} · {b.packages?.name || ""}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-primary">{fmt(Number(b.total_amount))}</p>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full capitalize ${b.status === "completed" ? "bg-emerald/10 text-emerald" : "bg-primary/10 text-primary"}`}>{b.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-sm text-muted-foreground text-center py-8">No bookings yet</p>}
-        </div>
-
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-primary" /> Recent Payments
-            </h3>
-            <button onClick={() => navigate("/admin/payments")} className="text-xs text-primary hover:underline">View All</button>
-          </div>
-          {recentPayments.length > 0 ? (
-            <div className="space-y-2">
-              {recentPayments.map(p => (
-                <div key={p.id} className="flex items-center justify-between bg-secondary/30 rounded-lg p-3 cursor-pointer hover:bg-secondary/50 transition-colors" onClick={() => navigate("/admin/payments")}>
-                  <div>
-                    <p className="text-sm font-medium">{p.bookings?.tracking_id || p.booking_id?.slice(0, 8)}</p>
-                    <p className="text-[10px] text-muted-foreground">#{p.installment_number || "—"} · {p.payment_method || "manual"}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-emerald">{fmt(Number(p.amount))}</p>
-                    <p className="text-[10px] text-muted-foreground">{p.paid_at ? format(new Date(p.paid_at), "dd MMM yy") : ""}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-sm text-muted-foreground text-center py-8">No payments yet</p>}
         </div>
       </div>
 
