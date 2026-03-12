@@ -236,6 +236,7 @@ export default function AdminSupplierAgentProfilePage() {
           category: parsed.service,
         };
       }),
+      contracts: contracts.map((c: any) => ({
         contract_amount: Number(c.contract_amount || 0),
         pilgrim_count: Number(c.pilgrim_count || 0),
         total_paid: Number(c.total_paid || 0),
