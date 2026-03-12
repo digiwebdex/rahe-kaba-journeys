@@ -16,6 +16,7 @@ export interface CompanyInfo {
 export interface InvoiceCustomer {
   full_name?: string | null;
   phone?: string | null;
+  email?: string | null;
   passport_number?: string | null;
   address?: string | null;
 }
