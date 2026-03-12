@@ -594,7 +594,7 @@ export default function AdminPaymentsPage() {
                 <div className="flex items-center gap-4">
                   <span className="font-heading font-bold text-destructive">{fmt(group.totalPaid)}</span>
                   <button
-                    onClick={(e) => { e.stopPropagation(); exportPDF({ title: `Supplier Payment History - ${group.name}`, columns: ["#", "Booking", "Amount", "Method", "Date", "Notes"], rows: group.payments.map((p: any, i: number) => [i + 1, p.bookings?.tracking_id || "—", Number(p.amount), p.payment_method || "—", p.date ? new Date(p.date).toLocaleDateString() : "—", p.notes || "—"]), summary: [`Total Paid: BDT ${group.totalPaid.toLocaleString("en-IN")}`] }); }}
+                    onClick={(e) => { e.stopPropagation(); exportPDF({ title: `Supplier Payment History - ${group.name}`, columns: ["#", "Amount", "Method", "Service Type", "Date", "Notes"], rows: group.payments.map((p: any, i: number) => { const { serviceLabel: sl } = extractServiceType(p.notes); return [i + 1, Number(p.amount), p.payment_method || "—", sl || "—", p.date ? new Date(p.date).toLocaleDateString() : "—", p.notes || "—"]; }), summary: [`Total Paid: BDT ${group.totalPaid.toLocaleString("en-IN")}`] }); }}
                     className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-md hover:bg-primary/20 transition-colors"
                   >
                     <FileDown className="h-3.5 w-3.5" /> PDF
@@ -606,9 +606,8 @@ export default function AdminPaymentsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border/50 text-left text-muted-foreground bg-muted/20">
-                        <th className="py-2 px-4">#</th>
-                        <th className="py-2 px-4">Booking</th>
-                        <th className="py-2 px-4">Amount</th>
+                         <th className="py-2 px-4">#</th>
+                         <th className="py-2 px-4">Amount</th>
                         <th className="py-2 px-4">Method</th>
                         <th className="py-2 px-4">Service Type</th>
                         <th className="py-2 px-4">Date</th>
@@ -622,7 +621,6 @@ export default function AdminPaymentsPage() {
                         return (
                         <tr key={p.id} className="border-b border-border/30 hover:bg-secondary/20">
                           <td className="py-2.5 px-4 text-xs text-muted-foreground">{i + 1}</td>
-                          <td className="py-2.5 px-4 font-mono text-xs">{p.bookings?.tracking_id || "—"}</td>
                           <td className="py-2.5 px-4 font-medium">{fmt(p.amount)}</td>
                           <td className="py-2.5 px-4 capitalize text-xs">{p.payment_method || "—"}</td>
                           <td className="py-2.5 px-4 text-xs">{sLabel || "—"}</td>
