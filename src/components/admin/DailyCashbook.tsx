@@ -314,11 +314,7 @@ export default function DailyCashbook({ onEntriesChanged }: DailyCashbookProps =
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <select className={inputClass} value={form.wallet_account_id} onChange={e => setForm({ ...form, wallet_account_id: e.target.value })}>
-                  <option value="">Select Wallet</option>
-                  {walletAccounts.map((w: any) => <option key={w.id} value={w.id}>{w.name} ({fmt(w.balance)})</option>)}
-                </select>
+              <div>
                 <input className={inputClass} type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
               </div>
 

@@ -622,15 +622,6 @@ export default function AdminAccountingPage() {
               </div>
             </div>
 
-            {walletAccounts.length > 0 && (
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Wallet Account</label>
-                <select className={inputClass} value={form.wallet_account_id} onChange={(e) => setForm({ ...form, wallet_account_id: e.target.value })}>
-                  <option value="">-- Optional --</option>
-                  {walletAccounts.map((w) => <option key={w.id} value={w.id}>{w.name} — {fmt(w.balance)}</option>)}
-                </select>
-              </div>
-            )}
 
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Notes</label>

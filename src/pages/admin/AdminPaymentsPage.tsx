@@ -736,11 +736,7 @@ export default function AdminPaymentsPage() {
                         ]} />
                       ) : p.status === "pending" && markPaidId === p.id ? (
                         <div className="flex items-center gap-1.5">
-                          <select className={inputClass + " w-28 !py-1 text-xs"} value={markPaidWallet} onChange={(e) => setMarkPaidWallet(e.target.value)}>
-                            <option value="">Wallet</option>
-                            {walletAccounts.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-                          </select>
-                          <button onClick={() => { markPaid(p.id, markPaidWallet || undefined); setMarkPaidId(null); }} className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">✓</button>
+                          <button onClick={() => { markPaid(p.id); setMarkPaidId(null); }} className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">✓</button>
                           <button onClick={() => setMarkPaidId(null)} className="text-xs text-muted-foreground">✕</button>
                         </div>
                       ) : (

@@ -408,13 +408,6 @@ export default function AdminSupplierAgentProfilePage() {
                 <option value="">-- All Bookings --</option>
                 {bookings.map(b => <option key={b.id} value={b.id}>{b.tracking_id} — Due: {fmt(b.supplier_due)}</option>)}
               </select></div>
-            {walletAccounts.length > 0 && (
-              <div><label className="text-xs text-muted-foreground block mb-1">Wallet</label>
-                <Select value={paymentForm.wallet_account_id} onValueChange={(v) => setPaymentForm({ ...paymentForm, wallet_account_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="-- Wallet --" /></SelectTrigger>
-                  <SelectContent>{walletAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name} ({fmt(a.balance)})</SelectItem>)}</SelectContent>
-                </Select></div>
-            )}
             <div><label className="text-xs text-muted-foreground block mb-1">Notes</label>
               <Input value={paymentForm.notes} onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })} placeholder="Notes..." /></div>
           </div>

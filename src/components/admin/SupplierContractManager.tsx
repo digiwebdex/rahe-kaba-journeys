@@ -268,15 +268,6 @@ export default function SupplierContractManager({
               <label className="text-xs text-muted-foreground block mb-1">Date</label>
               <Input type="date" value={paymentForm.payment_date} onChange={e => setPaymentForm({ ...paymentForm, payment_date: e.target.value })} />
             </div>
-            {walletAccounts.length > 0 && (
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1">Wallet</label>
-                <Select value={paymentForm.wallet_account_id} onValueChange={v => setPaymentForm({ ...paymentForm, wallet_account_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="-- Wallet --" /></SelectTrigger>
-                  <SelectContent>{walletAccounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name} ({fmt(a.balance)})</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            )}
             <div>
               <label className="text-xs text-muted-foreground block mb-1">Notes</label>
               <Input value={paymentForm.note} onChange={e => setPaymentForm({ ...paymentForm, note: e.target.value })} placeholder="Notes..." />
