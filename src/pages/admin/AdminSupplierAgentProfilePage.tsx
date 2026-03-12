@@ -42,6 +42,28 @@ const SERVICE_TYPES = [
   { value: "other", label: "Other" },
 ];
 
+const normalizeDateForInput = (value: unknown) => {
+  if (!value) return "";
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  const str = String(value).trim();
+  const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (match) return match[1];
+  const parsed = new Date(str);
+  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
+};
+
+const splitPaymentNotes = (rawNotes: unknown) => {
+  const raw = String(rawNotes || "").trim();
+  if (!raw) return { service: "", notes: "" };
+
+  const parts = raw.split(/\s+[—-]\s+/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return { service: parts[0], notes: parts.slice(1).join(" — ") };
+  }
+
+  return { service: "", notes: raw };
+};
+
 export default function AdminSupplierAgentProfilePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -58,7 +80,7 @@ export default function AdminSupplierAgentProfilePage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [editPaymentId, setEditPaymentId] = useState<string | null>(null);
-  const [editPaymentForm, setEditPaymentForm] = useState({ amount: "", payment_method: "cash", date: "", notes: "", service_type: "", wallet_account_id: "" });
+  const [editPaymentForm, setEditPaymentForm] = useState({ date: "", service: "", amount: "", payment_method: "cash", notes: "" });
   const [showEditPaymentModal, setShowEditPaymentModal] = useState(false);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
@@ -136,26 +158,25 @@ export default function AdminSupplierAgentProfilePage() {
 
   const startEditPayment = (p: any) => {
     setEditPaymentId(p.id);
-    const noteParts = (p.notes || "").split(" — ");
-    const foundService = SERVICE_TYPES.find(s => s.label === noteParts[0]);
-    const serviceType = foundService ? foundService.value : "";
-    const restNotes = foundService ? noteParts.slice(1).join(" — ") : (p.notes || "");
+    const parsed = splitPaymentNotes(p.notes);
     setEditPaymentForm({
-      amount: String(p.amount), payment_method: p.payment_method || "cash",
-      date: p.date || "", notes: restNotes,
-      service_type: serviceType, wallet_account_id: p.wallet_account_id || "",
+      date: normalizeDateForInput(p.date),
+      service: parsed.service,
+      amount: String(p.amount ?? ""),
+      payment_method: p.payment_method || "cash",
+      notes: parsed.notes,
     });
     setShowEditPaymentModal(true);
   };
 
   const handleSavePaymentEdit = async () => {
     if (!editPaymentId) return;
-    const serviceLabel = SERVICE_TYPES.find(s => s.value === editPaymentForm.service_type)?.label || "";
-    const combinedNotes = [serviceLabel, editPaymentForm.notes.trim()].filter(Boolean).join(" — ");
+    const combinedNotes = [editPaymentForm.service.trim(), editPaymentForm.notes.trim()].filter(Boolean).join(" — ");
     const { error } = await supabase.from("supplier_agent_payments").update({
-      amount: parseFloat(editPaymentForm.amount), payment_method: editPaymentForm.payment_method,
-      date: editPaymentForm.date || undefined, notes: combinedNotes || null,
-      wallet_account_id: editPaymentForm.wallet_account_id || null,
+      date: editPaymentForm.date || undefined,
+      amount: parseFloat(editPaymentForm.amount),
+      payment_method: editPaymentForm.payment_method,
+      notes: combinedNotes || null,
     }).eq("id", editPaymentId);
     if (error) { toast({ title: "Update failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Payment updated successfully" });
@@ -205,11 +226,15 @@ export default function AdminSupplierAgentProfilePage() {
         paid_to_supplier: Number(b.paid_to_supplier || 0),
         supplier_due: Number(b.supplier_due || 0), status: b.status,
       })),
-      agentPayments: filteredPayments.map(p => {
-        const serviceMatch = SERVICE_TYPES.find(s => s.value && p.notes?.startsWith(s.label));
-        const category = serviceMatch?.label || "";
-        const cleanNotes = serviceMatch ? (p.notes?.replace(serviceMatch.label, "").replace(/^\s*—\s*/, "").trim() || "") : (p.notes || "");
-        return { amount: Number(p.amount), date: p.date, method: p.payment_method || "cash", notes: cleanNotes, category };
+      agentPayments: filteredPayments.map((p: any) => {
+        const parsed = splitPaymentNotes(p.notes);
+        return {
+          amount: Number(p.amount),
+          date: p.date,
+          method: p.payment_method || "cash",
+          notes: parsed.notes,
+          category: parsed.service,
+        };
       }),
       contracts: contracts.map((c: any) => ({
         contract_amount: Number(c.contract_amount || 0),
@@ -323,9 +348,9 @@ export default function AdminSupplierAgentProfilePage() {
                 </tr></thead>
                 <tbody>
                   {filteredPayments.map((p: any) => {
-                    const serviceMatch = SERVICE_TYPES.find(s => s.value && p.notes?.startsWith(s.label));
-                    const category = serviceMatch?.label || "—";
-                    const cleanNotes = serviceMatch ? (p.notes?.replace(serviceMatch.label, "").replace(/^\s*—\s*/, "").trim() || "—") : (p.notes || "—");
+                    const parsed = splitPaymentNotes(p.notes);
+                    const category = parsed.service || "—";
+                    const cleanNotes = parsed.notes || "—";
                     return (
                       <tr key={p.id} className="border-b border-border/30">
                         <td className="py-2 pr-3 text-xs">{format(new Date(p.date), "dd MMM yyyy")}</td>
@@ -436,11 +461,8 @@ export default function AdminSupplierAgentProfilePage() {
           <div className="space-y-3">
             <div><label className="text-xs text-muted-foreground block mb-1">Date</label>
               <Input type="date" value={editPaymentForm.date} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, date: e.target.value })} /></div>
-            <div><label className="text-xs text-muted-foreground block mb-1">Service Type</label>
-              <Select value={editPaymentForm.service_type || ""} onValueChange={(v) => setEditPaymentForm({ ...editPaymentForm, service_type: v })}>
-                <SelectTrigger><SelectValue placeholder="-- Select Service --" /></SelectTrigger>
-                <SelectContent>{SERVICE_TYPES.filter(s => s.value).map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-              </Select></div>
+            <div><label className="text-xs text-muted-foreground block mb-1">Service</label>
+              <Input value={editPaymentForm.service} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, service: e.target.value })} placeholder="Service name" /></div>
             <div><label className="text-xs text-muted-foreground block mb-1">Amount (BDT) *</label>
               <Input type="number" min={0} value={editPaymentForm.amount} onChange={(e) => setEditPaymentForm({ ...editPaymentForm, amount: e.target.value })} /></div>
             <div><label className="text-xs text-muted-foreground block mb-1">Method</label>
