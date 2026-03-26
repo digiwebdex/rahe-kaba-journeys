@@ -29,7 +29,7 @@ const ServicesSection = () => {
   const items = lc?.items || defaultServices;
 
   return (
-    <section id="services" className="py-24 islamic-pattern">
+    <section id="services" className="py-24 islamic-pattern islamic-border-top">
       <div className="container mx-auto px-4">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
           <span className="text-primary text-sm font-medium tracking-[0.3em] uppercase">{sectionLabel}</span>
