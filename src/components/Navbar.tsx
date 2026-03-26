@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Phone, User, Globe } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/logo.jpg";
 import { useSiteContent } from "@/hooks/useSiteContent";

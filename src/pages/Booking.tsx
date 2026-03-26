@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Package, Users, CreditCard, Check, User, FileText } from "lucide-react";

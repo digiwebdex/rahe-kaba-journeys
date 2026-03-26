@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { toast } from "sonner";
 import { Upload, FileText, Trash2, Check, Loader2 } from "lucide-react";
 

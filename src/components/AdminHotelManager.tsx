@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { toast } from "sonner";
 import { Plus, X, Building2, Bed, Trash2, Edit2, Save, ChevronDown, ChevronUp, Image as ImageIcon, Star, MapPin, Eye } from "lucide-react";
 import HotelImageUpload from "@/components/admin/HotelImageUpload";

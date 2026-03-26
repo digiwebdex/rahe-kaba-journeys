@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import defaultSignatureImg from "@/assets/default-signature.png";
 
 export interface SignatureData {

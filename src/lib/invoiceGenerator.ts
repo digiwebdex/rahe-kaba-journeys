@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import logoImg from "@/assets/logo-nobg.png";
 import { getSignatureData, SignatureData } from "./pdfSignature";
 import { generateTrackingQr, addQrToDoc, addPaymentWatermark, getWatermarkStatus } from "./pdfQrCode";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { registerBengaliFont, addBengaliText, hasBengali, bengaliCellHook } from "./pdfFontLoader";
 
 export interface CompanyInfo {

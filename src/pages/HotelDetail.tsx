@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Star, MapPin, Ruler, Users, Wifi, Car, UtensilsCrossed, Dumbbell, ArrowLeft, Calendar } from "lucide-react";

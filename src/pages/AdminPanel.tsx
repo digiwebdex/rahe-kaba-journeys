@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { toast } from "sonner";
 import {
   LayoutDashboard, Package, Users, CreditCard, Settings, LogOut, Plus, X, AlertTriangle, FileText, FolderOpen, Building2, Pencil,

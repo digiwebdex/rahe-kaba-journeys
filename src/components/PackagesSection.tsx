@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { useLanguage } from "@/i18n/LanguageContext";
 import heroImage from "@/assets/hero-kaaba.jpg";
 import medinaImage from "@/assets/medina-mosque.jpg";

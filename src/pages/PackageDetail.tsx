@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { motion } from "framer-motion";
 import { Check, ArrowLeft, ArrowRight, Calendar, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";

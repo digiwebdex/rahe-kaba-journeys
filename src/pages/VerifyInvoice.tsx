@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/api";
 import { CheckCircle, XCircle, FileText, Loader2 } from "lucide-react";
 import { generateVerificationId } from "@/lib/pdfQrCode";
 
