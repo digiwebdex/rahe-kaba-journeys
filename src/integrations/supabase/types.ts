@@ -349,6 +349,45 @@ export type Database = {
           },
         ]
       }
+      cancellation_policies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          min_days_before_departure: number | null
+          name: string
+          refund_type: string
+          refund_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          min_days_before_departure?: number | null
+          name: string
+          refund_type?: string
+          refund_value?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          min_days_before_departure?: number | null
+          name?: string
+          refund_type?: string
+          refund_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cms_versions: {
         Row: {
           content: Json
@@ -1278,6 +1317,86 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      refunds: {
+        Row: {
+          booking_id: string
+          created_at: string
+          deduction_amount: number
+          id: string
+          original_amount: number
+          policy_id: string | null
+          processed_at: string | null
+          processed_by: string | null
+          reason: string | null
+          refund_amount: number
+          refund_method: string | null
+          status: string
+          updated_at: string
+          wallet_account_id: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          deduction_amount?: number
+          id?: string
+          original_amount?: number
+          policy_id?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string | null
+          refund_amount?: number
+          refund_method?: string | null
+          status?: string
+          updated_at?: string
+          wallet_account_id?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          deduction_amount?: number
+          id?: string
+          original_amount?: number
+          policy_id?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string | null
+          refund_amount?: number
+          refund_method?: string | null
+          status?: string
+          updated_at?: string
+          wallet_account_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_booking_profit"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "refunds_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "cancellation_policies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_wallet_account_id_fkey"
+            columns: ["wallet_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_content: {
         Row: {

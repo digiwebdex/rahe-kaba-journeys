@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, FileText, Users, Package, CreditCard,
   Calculator, BarChart3, Pencil, Settings, LogOut, UserCheck, Truck,
-  Hotel, Bell, AlertTriangle, BookOpen, DollarSign,
+  Hotel, Bell, AlertTriangle, BookOpen, DollarSign, RotateCcw, PieChart,
 } from "lucide-react";
 import logo from "@/assets/logo.jpg";
 import { NavLink } from "@/components/NavLink";
@@ -30,7 +30,9 @@ const financeMenuItems = [
   { title: "Accounting",      url: "/admin/accounting",     icon: Calculator,      roles: ["admin", "accountant", "viewer"] },
   { title: "Receivables",     url: "/admin/receivables",    icon: DollarSign,      roles: ["admin", "accountant", "viewer"] },
   
+  { title: "Refunds",         url: "/admin/refunds",        icon: RotateCcw,       roles: ["admin", "accountant", "viewer"] },
   { title: "Reports",         url: "/admin/reports",        icon: BarChart3,       roles: ["admin", "accountant", "viewer"] },
+  { title: "Analytics",       url: "/admin/analytics",      icon: PieChart,        roles: ["admin", "accountant", "viewer"] },
   { title: "Calculator",      url: "/admin/calculator",     icon: Calculator,      roles: ["admin", "accountant", "booking", "viewer"] },
 ];
 
