@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-kaaba.jpg";
 import { useLanguage } from "@/i18n/LanguageContext";
+import SEOHead, { productJsonLd, breadcrumbJsonLd } from "@/components/SEOHead";
 
 const PackageDetail = () => {
   const { id } = useParams();

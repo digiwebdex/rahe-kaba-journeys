@@ -7,6 +7,7 @@ import heroImage from "@/assets/hero-kaaba.jpg";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import SEOHead, { breadcrumbJsonLd } from "@/components/SEOHead";
 
 const reasonIcons = [Shield, Heart, Award, Clock];
 
