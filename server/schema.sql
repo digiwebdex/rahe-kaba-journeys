@@ -504,7 +504,7 @@ CREATE TABLE IF NOT EXISTS notification_logs (
 -- Notification settings
 CREATE TABLE IF NOT EXISTS notification_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_key TEXT NOT NULL,
+  event_key TEXT NOT NULL UNIQUE,
   event_label TEXT NOT NULL,
   enabled BOOLEAN NOT NULL DEFAULT true,
   email_enabled BOOLEAN NOT NULL DEFAULT true,
