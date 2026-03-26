@@ -372,11 +372,13 @@ export default function AdminAccountingPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-sm text-muted-foreground">Total Income</p>
-          <p className="text-2xl font-heading font-bold text-primary">{fmt(revenue)}</p>
+          <p className="text-2xl font-heading font-bold text-primary">{fmt(totalIncome)}</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Customer: {fmt(customerRevenue)} · Moallem: {fmt(moallemRevenue)} · Cashbook: {fmt(cashbookTotalIncome)}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-sm text-muted-foreground">Total Expense</p>
           <p className="text-2xl font-heading font-bold text-destructive">{fmt(totalExpenses)}</p>
+          <p className="text-[10px] text-muted-foreground mt-1">General: {fmt(totalExpenseAmount)} · Supplier: {fmt(supplierExpenseTotal + supplierContractExpenseTotal)} · Commission: {fmt(commissionExpenseTotal)}</p>
         </div>
         <div className="bg-card border border-border rounded-lg p-4">
           <p className="text-sm text-muted-foreground">Net Profit</p>
