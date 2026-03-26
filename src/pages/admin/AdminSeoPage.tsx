@@ -430,9 +430,9 @@ export default function AdminSeoPage() {
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     {item.ok ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <CheckCircle className="h-5 w-5 text-primary" />
                     ) : (
-                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                      <AlertTriangle className="h-5 w-5 text-muted-foreground" />
                     )}
                     <span className={item.ok ? "text-foreground" : "text-muted-foreground"}>{item.label}</span>
                   </div>
