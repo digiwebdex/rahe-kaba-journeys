@@ -59,6 +59,20 @@ const DEFAULT_PAGES: Record<string, { label: string; path: string }> = {
   track: { label: "ট্র্যাকিং পেজ", path: "/track" },
 };
 
+const DEFAULT_FB_CONFIG: FBPixelConfig = {
+  pixel_id: "",
+  enabled: false,
+  track_page_view: true,
+  track_view_content: true,
+  track_lead: true,
+  track_purchase: true,
+  track_initiate_checkout: true,
+  track_search: false,
+  track_contact: true,
+  capi_enabled: false,
+  test_event_code: "",
+};
+
 const DEFAULT_SEO: SeoSettings = {
   site_title: "Rahe Kaba Tours and Travels",
   site_description: "রাহে কাবা ট্যুরস অ্যান্ড ট্রাভেলস - হজ্জ, উমরাহ ও ভিসা সেবায় বাংলাদেশের বিশ্বস্ত প্রতিষ্ঠান।",
@@ -68,6 +82,7 @@ const DEFAULT_SEO: SeoSettings = {
   google_analytics_id: "",
   google_search_console: "",
   facebook_pixel_id: "",
+  facebook_pixel: DEFAULT_FB_CONFIG,
   default_lang: "bn",
   auto_sitemap: true,
   robots_index: true,
