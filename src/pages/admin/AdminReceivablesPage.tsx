@@ -40,6 +40,7 @@ interface PendingPayment {
 export default function AdminReceivablesPage() {
   const [bookings, setBookings] = useState<BookingReceivable[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [completedPaymentsTotal, setCompletedPaymentsTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "overdue" | "upcoming" | "paid">("all");
