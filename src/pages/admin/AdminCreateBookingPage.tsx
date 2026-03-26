@@ -453,7 +453,7 @@ export default function AdminCreateBookingPage() {
                   </button>
                 </div>
               ) : uploadedDocs[doc.key] ? (
-                <div className="flex items-center gap-1 justify-center text-xs text-green-600">
+                <div className="flex items-center gap-1 justify-center text-xs text-primary">
                   <CheckCircle className="h-3 w-3" /> Uploaded
                 </div>
               ) : (
