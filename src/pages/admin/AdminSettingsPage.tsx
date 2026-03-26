@@ -50,6 +50,13 @@ export default function AdminSettingsPage() {
         </section>
       )}
 
+      {/* Password Change (Admin only) */}
+      {currentRole === "admin" && (
+        <section>
+          <AdminPasswordChange />
+        </section>
+      )}
+
       {/* Installment Plans */}
       <section>
         <div className="flex justify-between items-center mb-4">
