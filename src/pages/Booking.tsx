@@ -30,6 +30,8 @@ const Booking = () => {
   const [user, setUser] = useState<any>(null);
   const [pkg, setPkg] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState(0);
@@ -69,15 +71,23 @@ const Booking = () => {
         }
       }
 
-      const [pkgRes, planRes] = await Promise.all([
+      const [pkgRes, planRes, pmRes] = await Promise.all([
         packageId
           ? supabase.from("packages").select("*").eq("id", packageId).eq("is_active", true).single()
           : Promise.resolve({ data: null }),
         supabase.from("installment_plans").select("*").eq("is_active", true).order("num_installments"),
+        supabase.from("company_settings").select("setting_value").eq("setting_key", "payment_methods").maybeSingle(),
       ]);
 
       setPkg(pkgRes.data);
       setPlans(planRes.data || []);
+      if (pmRes.data?.setting_value) {
+        const methods = typeof pmRes.data.setting_value === "string"
+          ? JSON.parse(pmRes.data.setting_value)
+          : pmRes.data.setting_value;
+        const enabled = Array.isArray(methods) ? methods.filter((m: any) => m.enabled) : [];
+        setPaymentMethods(enabled);
+      }
       setLoading(false);
     };
     init();
@@ -331,6 +341,59 @@ const Booking = () => {
                       ))}
                     </div>
                   </div>
+
+                  {/* Payment Methods */}
+                  {paymentMethods.length > 0 && (
+                    <div className="bg-card border border-border rounded-xl p-6">
+                      <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <CreditCard className="h-5 w-5 text-primary" /> {t("booking.paymentMethod") || "পেমেন্ট মাধ্যম"}
+                      </h2>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {paymentMethods.map((method: any) => (
+                          <button
+                            type="button"
+                            key={method.id}
+                            onClick={() => setSelectedPaymentMethod(method.id)}
+                            className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-all text-center ${
+                              selectedPaymentMethod === method.id
+                                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                                : "border-border hover:border-primary/40"
+                            }`}
+                          >
+                            <span className="text-2xl">{method.icon || "💳"}</span>
+                            <span className="text-sm font-medium">{method.name_bn || method.name}</span>
+                            {method.charge_percent > 0 && (
+                              <span className="text-[10px] text-muted-foreground">চার্জ: {method.charge_percent}%</span>
+                            )}
+                            {selectedPaymentMethod === method.id && (
+                              <Check className="h-4 w-4 text-primary" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedPaymentMethod && (() => {
+                        const m = paymentMethods.find((pm: any) => pm.id === selectedPaymentMethod);
+                        return m ? (
+                          <div className="mt-4 p-4 bg-secondary/50 rounded-lg space-y-2">
+                            <p className="text-sm font-medium">{m.name_bn || m.name} {t("booking.paymentInfo") || "পেমেন্ট তথ্য"}</p>
+                            {m.account_number && (
+                              <p className="text-sm text-muted-foreground">
+                                {t("booking.accountNumber") || "অ্যাকাউন্ট নম্বর"}: <span className="font-mono font-bold text-foreground">{m.account_number}</span>
+                              </p>
+                            )}
+                            {m.account_name && (
+                              <p className="text-sm text-muted-foreground">
+                                {t("booking.accountName") || "অ্যাকাউন্ট নাম"}: <span className="font-bold text-foreground">{m.account_name}</span>
+                              </p>
+                            )}
+                            {(m.instructions_bn || m.instructions) && (
+                              <p className="text-xs text-muted-foreground mt-2">{m.instructions_bn || m.instructions}</p>
+                            )}
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
 
                   <div>
                     <textarea
