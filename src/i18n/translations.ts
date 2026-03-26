@@ -267,6 +267,14 @@ export const translations: Record<Language, Record<string, string>> = {
     "booking.payLaterNote": "Payment is not required now. You can pay later.",
     "booking.paymentStatus": "Payment Status",
     "booking.notPaid": "Pay Later",
+    "booking.personalDetails": "Personal Details",
+    "booking.fullName": "Full Name",
+    "booking.fullNamePlaceholder": "Enter your full name",
+    "booking.phoneNumber": "Phone Number",
+    "booking.passportOptional": "Passport Number (Optional)",
+    "booking.passportPlaceholder": "Passport number",
+    "booking.address": "Address",
+    "booking.addressPlaceholder": "Your address",
 
     // Dashboard
     "dashboard.bookings": "Bookings",
@@ -619,6 +627,14 @@ export const translations: Record<Language, Record<string, string>> = {
     "booking.payLaterNote": "এখনই পেমেন্ট করতে হবে না। আপনি পরে পেমেন্ট করতে পারবেন।",
     "booking.paymentStatus": "পেমেন্ট স্ট্যাটাস",
     "booking.notPaid": "পরে পেমেন্ট করবেন",
+    "booking.personalDetails": "ব্যক্তিগত তথ্য",
+    "booking.fullName": "পূর্ণ নাম",
+    "booking.fullNamePlaceholder": "আপনার পূর্ণ নাম লিখুন",
+    "booking.phoneNumber": "ফোন নম্বর",
+    "booking.passportOptional": "পাসপোর্ট নম্বর (ঐচ্ছিক)",
+    "booking.passportPlaceholder": "পাসপোর্ট নম্বর",
+    "booking.address": "ঠিকানা",
+    "booking.addressPlaceholder": "আপনার ঠিকানা",
 
     // Dashboard
     "dashboard.bookings": "বুকিংসমূহ",
