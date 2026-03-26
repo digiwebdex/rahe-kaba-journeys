@@ -59,38 +59,9 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Register
-router.post('/register', async (req, res) => {
-  try {
-    const { email, password, full_name, phone } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
-
-    const existing = await query('SELECT id FROM users WHERE email = $1', [email.trim().toLowerCase()]);
-    if (existing.rows.length > 0) return res.status(409).json({ error: 'Email already registered' });
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const userId = uuidv4();
-
-    await query(
-      'INSERT INTO users (id, email, password_hash, full_name, phone) VALUES ($1, $2, $3, $4, $5)',
-      [userId, email.trim().toLowerCase(), passwordHash, full_name || null, phone || null]
-    );
-
-    // Create profile
-    await query(
-      'INSERT INTO profiles (user_id, full_name, email, phone) VALUES ($1, $2, $3, $4)',
-      [userId, full_name || null, email.trim().toLowerCase(), phone || null]
-    );
-
-    // Assign default role
-    await query('INSERT INTO user_roles (user_id, role) VALUES ($1, $2)', [userId, 'user']);
-
-    res.status(201).json({ message: 'Account created successfully' });
-  } catch (err) {
-    console.error('Register error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+// Register - DISABLED for security. Only admins can create accounts via /admin/create-user
+router.post('/register', (_req, res) => {
+  return res.status(403).json({ error: 'Public registration is disabled. Contact your administrator.' });
 });
 
 // Refresh token
