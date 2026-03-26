@@ -130,7 +130,7 @@ const HeroSection = () => {
           </a>
           <a
             href="#contact"
-            className="border border-primary/30 text-foreground font-semibold px-8 py-4 rounded-xl text-sm hover:bg-primary/10 hover:border-primary/50 backdrop-blur-sm transition-all duration-300 inline-flex items-center"
+            className="border border-white/30 text-white font-semibold px-8 py-4 rounded-xl text-sm hover:bg-white/10 hover:border-white/50 backdrop-blur-sm transition-all duration-300 inline-flex items-center"
           >
             {ctaSecondary}
           </a>
