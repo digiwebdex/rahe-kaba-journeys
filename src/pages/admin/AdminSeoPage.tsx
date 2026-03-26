@@ -424,6 +424,8 @@ export default function AdminSeoPage() {
                   { label: "সার্চ ইঞ্জিন ইনডেক্সিং চালু", ok: settings.robots_index },
                   { label: "Google Analytics কনফিগার করা আছে", ok: !!settings.google_analytics_id },
                   { label: "Search Console ভেরিফিকেশন", ok: !!settings.google_search_console },
+                  { label: "Facebook Pixel কনফিগার করা আছে", ok: !!(settings.facebook_pixel?.enabled && settings.facebook_pixel?.pixel_id) },
+                  { label: "Conversions API চালু", ok: !!settings.facebook_pixel?.capi_enabled },
                   { label: "সাইটম্যাপ চালু আছে", ok: settings.auto_sitemap },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
