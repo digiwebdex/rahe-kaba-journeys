@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import ServicesSection from "@/components/ServicesSection";
 import PackagesSection from "@/components/PackagesSection";
+import FacilitiesSection from "@/components/FacilitiesSection";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import BackToTop from "@/components/BackToTop";
@@ -23,6 +24,7 @@ const Index = () => {
       <Navbar />
       <HeroSection />
       <ServicesSection />
+      <FacilitiesSection />
       <PackagesSection />
       <Suspense fallback={<SectionFallback />}>
         <GuidelineSection />
