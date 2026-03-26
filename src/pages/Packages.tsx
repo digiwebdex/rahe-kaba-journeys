@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-kaaba.jpg";
 import medinaImage from "@/assets/medina-mosque.jpg";
 import { useLanguage } from "@/i18n/LanguageContext";
+import SEOHead, { breadcrumbJsonLd } from "@/components/SEOHead";
 
 const fallbackImages = [heroImage, medinaImage];
 
