@@ -123,7 +123,7 @@ const HeroSection = () => {
         >
           <a
             href="#packages"
-            className="group bg-gradient-gold text-primary-foreground font-semibold px-8 py-4 rounded-xl text-sm hover:shadow-gold hover:scale-[1.02] transition-all duration-300 inline-flex items-center gap-2"
+            className="group bg-gradient-gold text-white font-semibold px-8 py-4 rounded-xl text-sm hover:shadow-gold hover:scale-[1.02] transition-all duration-300 inline-flex items-center gap-2"
           >
             {ctaPrimary}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
