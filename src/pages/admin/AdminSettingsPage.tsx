@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/api";
 import { toast } from "sonner";
-import { Plus, X, Bell, PenTool, Database, Lock } from "lucide-react";
+import { Plus, X, Bell, PenTool, Database, Lock, LayoutGrid } from "lucide-react";
 import AdminDocumentViewer from "@/components/AdminDocumentViewer";
 import { useAdminRole } from "@/components/admin/AdminLayout";
 import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
@@ -9,6 +9,7 @@ import SignatureSettingsManager from "@/components/admin/SignatureSettingsManage
 import AdminUserManager from "@/components/admin/AdminUserManager";
 import BackupRestoreManager from "@/components/admin/BackupRestoreManager";
 import AdminPasswordChange from "@/components/admin/AdminPasswordChange";
+import SectionVisibilityManager from "@/components/admin/SectionVisibilityManager";
 
 const inputClass = "w-full bg-secondary border border-border rounded-md px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40";
 
@@ -48,6 +49,7 @@ export default function AdminSettingsPage() {
           <h2 className="font-heading text-lg font-bold mb-3">Quick Settings</h2>
           <div className="flex flex-wrap gap-2">
             <a href="#password-settings" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-2 rounded-md text-sm font-medium">Change Password</a>
+            <a href="#section-visibility" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-2 rounded-md text-sm font-medium">Website Sections</a>
             <a href="#notification-settings" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-2 rounded-md text-sm font-medium">SMS/Email Config</a>
             <a href="#backup-restore" className="bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-2 rounded-md text-sm font-medium">Backup & Restore</a>
           </div>
@@ -65,6 +67,21 @@ export default function AdminSettingsPage() {
       {currentRole === "admin" && (
         <section id="user-management">
           <AdminUserManager />
+        </section>
+      )}
+
+      {/* Section Visibility (Admin only) */}
+      {currentRole === "admin" && (
+        <section id="section-visibility">
+          <h2 className="font-heading text-xl font-bold flex items-center gap-2 mb-4">
+            <LayoutGrid className="h-5 w-5 text-primary" /> Website Section Visibility
+          </h2>
+          <div className="bg-card border border-border rounded-lg p-5">
+            <p className="text-sm text-muted-foreground mb-4">
+              Enable or disable individual sections on your public website. Disabled sections will be hidden from visitors.
+            </p>
+            <SectionVisibilityManager />
+          </div>
         </section>
       )}
 

@@ -11,12 +11,13 @@ import { useLanguage } from "@/i18n/LanguageContext";
 
 const fallbackImages = [heroImage, medinaImage];
 
-const TYPE_ORDER = ["hajj", "umrah", "tour", "visa", "hotel", "transport", "ziyara"];
+const TYPE_ORDER = ["hajj", "umrah", "tour", "visa", "air_ticket", "hotel", "transport", "ziyara"];
 const TYPE_LABELS: Record<string, { en: string; bn: string }> = {
   hajj: { en: "Hajj Packages", bn: "হজ্জ প্যাকেজ" },
   umrah: { en: "Umrah Packages", bn: "উমরাহ প্যাকেজ" },
   tour: { en: "Tour Packages", bn: "ট্যুর প্যাকেজ" },
-  visa: { en: "Visa Packages", bn: "ভিসা প্যাকেজ" },
+  visa: { en: "Visa Services", bn: "ভিসা সার্ভিস" },
+  air_ticket: { en: "Air Tickets", bn: "এয়ার টিকেট" },
   hotel: { en: "Hotel Packages", bn: "হোটেল প্যাকেজ" },
   transport: { en: "Transport Packages", bn: "পরিবহন প্যাকেজ" },
   ziyara: { en: "Ziyara Packages", bn: "জিয়ারত প্যাকেজ" },
@@ -26,7 +27,9 @@ const Packages = () => {
   const { t, language } = useLanguage();
   const [packages, setPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState("all");
+  // Support URL query param ?type=air_ticket
+  const urlType = new URLSearchParams(window.location.search).get("type");
+  const [typeFilter, setTypeFilter] = useState(urlType || "all");
 
   useEffect(() => {
     const fetchPackages = async () => {

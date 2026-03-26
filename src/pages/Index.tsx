@@ -4,9 +4,11 @@ import HeroSection from "@/components/HeroSection";
 import ServicesSection from "@/components/ServicesSection";
 import PackagesSection from "@/components/PackagesSection";
 import FacilitiesSection from "@/components/FacilitiesSection";
+import TypedPackageSection from "@/components/TypedPackageSection";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import BackToTop from "@/components/BackToTop";
+import { useSectionVisibility } from "@/hooks/useSectionVisibility";
 
 // Lazy load below-fold sections
 const GuidelineSection = lazy(() => import("@/components/GuidelineSection"));
@@ -19,31 +21,57 @@ const ContactSection = lazy(() => import("@/components/ContactSection"));
 const SectionFallback = () => <div className="py-20" />;
 
 const Index = () => {
+  const { visibility, loading } = useSectionVisibility();
+
+  // Don't block render, show everything while loading (defaults are all true)
+  const show = (key: string) => loading || visibility[key] !== false;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <HeroSection />
-      <ServicesSection />
-      <FacilitiesSection />
-      <PackagesSection />
-      <Suspense fallback={<SectionFallback />}>
-        <GuidelineSection />
-      </Suspense>
-      <Suspense fallback={<SectionFallback />}>
-        <VideoGuideSection />
-      </Suspense>
-      <Suspense fallback={<SectionFallback />}>
-        <GallerySection />
-      </Suspense>
-      <Suspense fallback={<SectionFallback />}>
-        <TestimonialsSection />
-      </Suspense>
-      <Suspense fallback={<SectionFallback />}>
-        <AboutSection />
-      </Suspense>
-      <Suspense fallback={<SectionFallback />}>
-        <ContactSection />
-      </Suspense>
+      {show("hero") && <HeroSection />}
+      {show("services") && <ServicesSection />}
+      {show("facilities") && <FacilitiesSection />}
+      {show("packages") && <PackagesSection />}
+      {show("air_tickets") && (
+        <TypedPackageSection packageType="air_ticket" sectionId="air-tickets" />
+      )}
+      {show("visa_services") && (
+        <TypedPackageSection packageType="visa" sectionId="visa-services" />
+      )}
+      {show("tour_packages") && (
+        <TypedPackageSection packageType="tour" sectionId="tour-packages" />
+      )}
+      {show("guidelines") && (
+        <Suspense fallback={<SectionFallback />}>
+          <GuidelineSection />
+        </Suspense>
+      )}
+      {show("video_guide") && (
+        <Suspense fallback={<SectionFallback />}>
+          <VideoGuideSection />
+        </Suspense>
+      )}
+      {show("gallery") && (
+        <Suspense fallback={<SectionFallback />}>
+          <GallerySection />
+        </Suspense>
+      )}
+      {show("testimonials") && (
+        <Suspense fallback={<SectionFallback />}>
+          <TestimonialsSection />
+        </Suspense>
+      )}
+      {show("about") && (
+        <Suspense fallback={<SectionFallback />}>
+          <AboutSection />
+        </Suspense>
+      )}
+      {show("contact") && (
+        <Suspense fallback={<SectionFallback />}>
+          <ContactSection />
+        </Suspense>
+      )}
       <Footer />
       <WhatsAppFloat />
       <BackToTop />
