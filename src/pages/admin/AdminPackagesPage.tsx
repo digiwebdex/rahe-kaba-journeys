@@ -28,8 +28,13 @@ export default function AdminPackagesPage() {
   const [uploading, setUploading] = useState(false);
   const [viewPkg, setViewPkg] = useState<any>(null);
 
+  const [typeFilter, setTypeFilter] = useState("all");
+
   const fetchPkgs = () => supabase.from("packages").select("*").order("created_at", { ascending: false }).then(({ data }) => setPackages(data || []));
   useEffect(() => { fetchPkgs(); }, []);
+
+  const filteredPackages = typeFilter === "all" ? packages : packages.filter(p => p.type === typeFilter);
+  const availableTypes = [...new Set(packages.map(p => p.type))].sort();
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
