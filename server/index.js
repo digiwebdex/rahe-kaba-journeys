@@ -878,6 +878,66 @@ app.delete('/api/storage/:bucket', authenticate, async (req, res) => {
 });
 
 // =============================================
+// CONTACT FORM EMAIL
+// =============================================
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, phone, email, service, message } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({ error: 'Name and phone are required' });
+    }
+
+    const RESEND_API_KEY = process.env.RESEND_API_KEY;
+    const CONTACT_EMAIL = 'rahekaba@gmail.com';
+
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY not configured');
+      return res.status(500).json({ error: 'Email service not configured' });
+    }
+
+    const htmlBody = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+        <h2 style="color:#b8860b;border-bottom:2px solid #b8860b;padding-bottom:10px;">📩 New Contact Form Submission</h2>
+        <table style="width:100%;border-collapse:collapse;margin-top:15px;">
+          <tr><td style="padding:8px;font-weight:bold;color:#555;width:120px;">Name:</td><td style="padding:8px;">${name}</td></tr>
+          <tr style="background:#f9f9f9;"><td style="padding:8px;font-weight:bold;color:#555;">Phone:</td><td style="padding:8px;">${phone}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold;color:#555;">Email:</td><td style="padding:8px;">${email || 'Not provided'}</td></tr>
+          <tr style="background:#f9f9f9;"><td style="padding:8px;font-weight:bold;color:#555;">Service:</td><td style="padding:8px;">${service || 'Not selected'}</td></tr>
+          <tr><td style="padding:8px;font-weight:bold;color:#555;vertical-align:top;">Message:</td><td style="padding:8px;">${message || 'No message'}</td></tr>
+        </table>
+        <p style="color:#999;font-size:12px;margin-top:20px;">Sent from RAHE KABA website contact form</p>
+      </div>
+    `;
+
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: process.env.NOTIFICATION_FROM_EMAIL || 'RAHE KABA <noreply@rahekabatravels.com>',
+        to: [CONTACT_EMAIL],
+        subject: `New Contact: ${name} - ${service || 'General Inquiry'}`,
+        html: htmlBody,
+        reply_to: email || undefined,
+      }),
+    });
+
+    if (!emailRes.ok) {
+      const err = await emailRes.text();
+      console.error('Resend error:', err);
+      return res.status(500).json({ error: 'Failed to send email' });
+    }
+
+    res.json({ success: true, message: 'Email sent successfully' });
+  } catch (err) {
+    console.error('Contact email error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// =============================================
 // SERVE FRONTEND (production)
 // =============================================
 const frontendPath = path.join(__dirname, '..', 'dist');
