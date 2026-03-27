@@ -86,6 +86,9 @@ const Footer = () => {
             <span className="text-white/20">|</span>
             <a href="/refund-policy" className="hover:text-gold-light transition-colors">{language === "bn" ? "রিফান্ড নীতি" : "Refund Policy"}</a>
           </div>
+          <div className="flex justify-center mb-4">
+            <img src={sslcommerzPayWith} alt="Payment Methods - Pay With SSLCommerz" className="h-10 md:h-12 object-contain opacity-80" />
+          </div>
           <div className="text-center text-sm text-white/50">
             <p>© {new Date().getFullYear()} {companyName} {tagline}. {t("footer.allRights")}</p>
             <p className="mt-2 text-xs text-white/30">{t("footer.designBy")} <a href={devUrl} target="_blank" rel="noopener noreferrer" className="hover:text-gold-light transition-colors">{devName}</a></p>
