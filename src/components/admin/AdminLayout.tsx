@@ -8,6 +8,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { Eye } from "lucide-react";
 import type { AppRole } from "@/hooks/useUserRole";
+import { AdminThemeProvider } from "./ThemeProvider";
+import { ThemeToggle } from "./ThemeToggle";
 
 // Role context so child components can access the current admin role
 const AdminRoleContext = createContext<AppRole>(null);
@@ -79,34 +81,39 @@ export default function AdminLayout() {
 
   return (
     <AdminRoleContext.Provider value={role}>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AdminSidebar role={role} />
-          <main className="flex-1 flex flex-col min-w-0">
-            <header className="h-14 border-b border-border flex items-center px-4 sticky top-0 bg-background z-40">
-              <SidebarTrigger />
-              <span className="ml-auto text-xs text-muted-foreground capitalize bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-                {ROLE_LABELS[role || ""] || role}
-              </span>
-            </header>
-            {isReadOnly && (
-              <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center gap-2 text-amber-700 text-sm">
-                <Eye className="h-4 w-4" />
-                <span className="font-medium">Read-Only Mode</span> — You can only view data, no changes can be made.
+      <AdminThemeProvider>
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full">
+            <AdminSidebar role={role} />
+            <main className="flex-1 flex flex-col min-w-0">
+              <header className="h-14 border-b border-border flex items-center px-4 sticky top-0 bg-background z-40">
+                <SidebarTrigger />
+                <div className="ml-auto flex items-center gap-3">
+                  <ThemeToggle />
+                  <span className="text-xs text-muted-foreground capitalize bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
+                    {ROLE_LABELS[role || ""] || role}
+                  </span>
+                </div>
+              </header>
+              {isReadOnly && (
+                <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm">
+                  <Eye className="h-4 w-4" />
+                  <span className="font-medium">Read-Only Mode</span> — You can only view data, no changes can be made.
+                </div>
+              )}
+              {isCmsOnly && (
+                <div className="bg-blue-500/10 border-b border-blue-500/30 px-4 py-2 flex items-center gap-2 text-blue-700 dark:text-blue-400 text-sm">
+                  <Eye className="h-4 w-4" />
+                  <span className="font-medium">CMS Mode</span> — You can only access content management.
+                </div>
+              )}
+              <div className="flex-1 p-6 overflow-auto">
+                <Outlet />
               </div>
-            )}
-            {isCmsOnly && (
-              <div className="bg-blue-500/10 border-b border-blue-500/30 px-4 py-2 flex items-center gap-2 text-blue-700 text-sm">
-                <Eye className="h-4 w-4" />
-                <span className="font-medium">CMS Mode</span> — You can only access content management.
-              </div>
-            )}
-            <div className="flex-1 p-6 overflow-auto">
-              <Outlet />
-            </div>
-          </main>
-        </div>
-      </SidebarProvider>
+            </main>
+          </div>
+        </SidebarProvider>
+      </AdminThemeProvider>
     </AdminRoleContext.Provider>
   );
 }
