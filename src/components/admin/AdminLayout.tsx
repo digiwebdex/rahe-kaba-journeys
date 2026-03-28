@@ -8,6 +8,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { Eye } from "lucide-react";
 import type { AppRole } from "@/hooks/useUserRole";
+import { AdminThemeProvider } from "./ThemeProvider";
+import { ThemeToggle } from "./ThemeToggle";
 
 // Role context so child components can access the current admin role
 const AdminRoleContext = createContext<AppRole>(null);
