@@ -172,7 +172,7 @@ export default function AdminPackagesPage() {
           </div>
           <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
             <Star className="h-3 w-3 fill-primary text-primary" />
-            <span className="text-xs font-bold text-gray-800">4.9</span>
+            <span className="text-xs font-bold text-foreground">4.9</span>
           </div>
           <div className="absolute bottom-3 left-3">
             <p className="text-2xl font-heading font-bold text-white drop-shadow-lg">
