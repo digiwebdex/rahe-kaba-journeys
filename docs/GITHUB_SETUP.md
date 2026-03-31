@@ -9,7 +9,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Repository** | https://github.com/digiwebdex/rahe-kaba-journeys-35ffd43e |
+| **Repository** | https://github.com/digiwebdex/rahe-kaba-journeys-b09cdb05.git |
 | **Branch** | `main` |
 | **Owner** | digiwebdex |
 | **Sync** | Bidirectional (Lovable ↔ GitHub) |
@@ -32,7 +32,7 @@
 ### VPS Deployment
 1. Run `git pull origin main` on VPS
 2. Changes pulled from the same GitHub repository
-3. Build and restart: `npm run build && pm2 restart rahekaba-api`
+3. Build and restart safely: `bash ./scripts/deploy-vps-safe.sh`
 
 ---
 

@@ -14,8 +14,7 @@
 **Fix:**
 ```bash
 cd /var/www/rahe-kaba-journeys-72ccca69
-npm run build
-pm2 restart rahekaba-api
+bash ./scripts/deploy-vps-safe.sh
 ```
 Then hard refresh: `Ctrl + Shift + R`
 
@@ -27,12 +26,12 @@ Then hard refresh: `Ctrl + Shift + R`
 ```bash
 npm install <package-name>
 npm run build
-pm2 restart rahekaba-api
+pm2 restart rahekaba-api --update-env
 ```
 
 **Example (react-helmet-async):**
 ```bash
-npm install react-helmet-async && npm run build && pm2 restart rahekaba-api
+npm install react-helmet-async && npm run build && pm2 restart rahekaba-api --update-env
 ```
 
 ### "Failed to load notification settings"
@@ -58,6 +57,7 @@ localStorage.removeItem('rk_language');
 1. Check server: `pm2 status`
 2. Check logs: `pm2 logs rahekaba-api --lines 50`
 3. Verify `server/.env` has correct `JWT_SECRET` and `DATABASE_URL`
+4. Restart only this project: `pm2 restart rahekaba-api --update-env`
 
 ### CMS content not showing
 
@@ -80,7 +80,7 @@ WHERE NOT EXISTS (SELECT 1 FROM site_content WHERE section_key = key);
 **Fix:**
 ```bash
 npm install react-helmet-async
-npm run build && pm2 restart rahekaba-api
+npm run build && pm2 restart rahekaba-api --update-env
 ```
 Then hard refresh and check page source (`Ctrl+U`)
 
@@ -96,7 +96,7 @@ Then hard refresh and check page source (`Ctrl+U`)
 ```bash
 pm2 logs rahekaba-api --lines 50
 psql -U digiwebdex -d rahekaba -p 5433 -h 127.0.0.1 -c "SELECT 1;"
-pm2 restart rahekaba-api
+pm2 restart rahekaba-api --update-env
 ```
 
 ### "relation does not exist" error
@@ -126,7 +126,7 @@ chmod 755 /var/www/rahe-kaba-journeys-72ccca69/server/uploads
 ```bash
 nano server/.env
 # Update FRONTEND_URL to match your domain
-pm2 restart rahekaba-api
+pm2 restart rahekaba-api --update-env
 ```
 
 ---
@@ -208,9 +208,11 @@ nano .env
 pm2 resurrect
 # If that fails:
 cd /var/www/rahe-kaba-journeys-72ccca69
-pm2 start server/index.js --name rahekaba-api
+pm2 start ecosystem.config.cjs --only rahekaba-api --update-env
 pm2 save
 ```
+
+> On a VPS with multiple projects, never use `pm2 restart all`, never reuse another project's port, and always restart Rahe Kaba with `--update-env` so it reloads only its own `server/.env`.
 
 ---
 

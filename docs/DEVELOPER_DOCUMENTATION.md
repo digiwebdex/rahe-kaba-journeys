@@ -628,18 +628,18 @@ All notifications logged in `notification_logs` table with delivery status.
 | PM2 Process | `rahekaba-api` |
 | API Port | 3001 |
 | DB Port | 5433 (Docker) |
-| Repository | https://github.com/digiwebdex/rahe-kaba-journeys-44e58262 |
+| Repository | https://github.com/digiwebdex/rahe-kaba-journeys-b09cdb05.git |
 
 ### Quick Deploy
 
 ```bash
-cd /var/www/rahe-kaba-journeys-72ccca69 && git pull origin main && npm run build && pm2 restart rahekaba-api
+cd /var/www/rahe-kaba-journeys-72ccca69 && bash ./scripts/deploy-vps-safe.sh
 ```
 
 ### Full Deploy (with new packages)
 
 ```bash
-cd /var/www/rahe-kaba-journeys-72ccca69 && git pull origin main && npm install && npm run build && pm2 restart rahekaba-api
+cd /var/www/rahe-kaba-journeys-72ccca69 && bash ./scripts/deploy-vps-safe.sh
 ```
 
 After deploy, hard refresh browser: `Ctrl + Shift + R`
@@ -779,7 +779,7 @@ See `docs/TROUBLESHOOTING.md` for the complete troubleshooting guide.
 
 | Problem | Solution |
 |---------|----------|
-| Blank page | `npm run build && pm2 restart rahekaba-api` + hard refresh |
+| Blank page | `bash ./scripts/deploy-vps-safe.sh` + hard refresh |
 | API 500 | `pm2 logs rahekaba-api --lines 50` |
 | DB error | `systemctl status postgresql` or check Docker |
 | Login fails | Check `server/.env` JWT_SECRET and DATABASE_URL |
