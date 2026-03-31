@@ -779,7 +779,7 @@ See `docs/TROUBLESHOOTING.md` for the complete troubleshooting guide.
 
 | Problem | Solution |
 |---------|----------|
-| Blank page | `npm run build && pm2 restart rahekaba-api` + hard refresh |
+| Blank page | `bash ./scripts/deploy-vps-safe.sh` + hard refresh |
 | API 500 | `pm2 logs rahekaba-api --lines 50` |
 | DB error | `systemctl status postgresql` or check Docker |
 | Login fails | Check `server/.env` JWT_SECRET and DATABASE_URL |

@@ -328,7 +328,7 @@ du -sh /var/www/rahe-kaba-journeys-72ccca69/server/uploads/
 
 ```bash
 pm2 logs rahekaba-api --lines 50
-pm2 restart rahekaba-api
+pm2 restart rahekaba-api --update-env
 ```
 
 ### Build fails
@@ -344,7 +344,7 @@ npm run build 2>&1 | tail -50
 ```bash
 npm install <package-name>
 npm run build
-pm2 restart rahekaba-api
+pm2 restart rahekaba-api --update-env
 ```
 
 ### Database connection error
