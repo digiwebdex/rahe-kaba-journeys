@@ -628,18 +628,18 @@ All notifications logged in `notification_logs` table with delivery status.
 | PM2 Process | `rahekaba-api` |
 | API Port | 3001 |
 | DB Port | 5433 (Docker) |
-| Repository | https://github.com/digiwebdex/rahe-kaba-journeys-44e58262 |
+| Repository | https://github.com/digiwebdex/rahe-kaba-journeys-b09cdb05.git |
 
 ### Quick Deploy
 
 ```bash
-cd /var/www/rahe-kaba-journeys-72ccca69 && git pull origin main && npm run build && pm2 restart rahekaba-api
+cd /var/www/rahe-kaba-journeys-72ccca69 && bash ./scripts/deploy-vps-safe.sh
 ```
 
 ### Full Deploy (with new packages)
 
 ```bash
-cd /var/www/rahe-kaba-journeys-72ccca69 && git pull origin main && npm install && npm run build && pm2 restart rahekaba-api
+cd /var/www/rahe-kaba-journeys-72ccca69 && bash ./scripts/deploy-vps-safe.sh
 ```
 
 After deploy, hard refresh browser: `Ctrl + Shift + R`

@@ -8,7 +8,7 @@
 ## ⚡ Standard Deployment (Most Common)
 
 ```bash
-cd /var/www/rahe-kaba-journeys-72ccca69 && git pull origin main && npm run build && pm2 restart rahekaba-api
+cd /var/www/rahe-kaba-journeys-72ccca69 && bash ./scripts/deploy-vps-safe.sh
 ```
 
 After deploy, do a **hard refresh** in browser: `Ctrl + Shift + R`
@@ -18,7 +18,7 @@ After deploy, do a **hard refresh** in browser: `Ctrl + Shift + R`
 ## 📦 Full Deployment (With New Packages)
 
 ```bash
-cd /var/www/rahe-kaba-journeys-72ccca69 && git pull origin main && npm install && npm run build && pm2 restart rahekaba-api
+cd /var/www/rahe-kaba-journeys-72ccca69 && bash ./scripts/deploy-vps-safe.sh
 ```
 
 ---
@@ -47,7 +47,7 @@ npm run build
 ### 4. Restart API Server
 
 ```bash
-pm2 restart rahekaba-api
+pm2 restart rahekaba-api --update-env
 ```
 
 ---
@@ -59,13 +59,13 @@ pm2 restart rahekaba-api
 pm2 status
 
 # Restart rahekaba API
-pm2 restart rahekaba-api
+pm2 restart rahekaba-api --update-env
 
 # Stop API
 pm2 stop rahekaba-api
 
-# Start API
-pm2 start rahekaba-api
+# Start API with project-specific cwd/env
+pm2 start ecosystem.config.cjs --only rahekaba-api --update-env
 
 # View live logs
 pm2 logs rahekaba-api
@@ -88,6 +88,8 @@ pm2 startup
 # Flush all logs
 pm2 flush rahekaba-api
 ```
+
+> Safe rule for multi-project VPS: manage only `rahekaba-api`, never use `pm2 restart all`, and keep Rahe Kaba pinned to port `3001`.
 
 ---
 

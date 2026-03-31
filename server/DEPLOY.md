@@ -104,11 +104,13 @@ sudo nginx -t && sudo systemctl restart nginx
 ```bash
 sudo npm install -g pm2
 
-cd /var/www/rahe-kaba-journeys-72ccca69/server
-pm2 start index.js --name "rahekaba-api"
+cd /var/www/rahe-kaba-journeys-72ccca69
+pm2 start ecosystem.config.cjs --only rahekaba-api --update-env
 pm2 save
 pm2 startup  # Follow the instructions to auto-start on reboot
 ```
+
+> Important: always manage this app through `ecosystem.config.cjs` so PM2 uses the Rahe Kaba server directory and environment only. Do **not** use `pm2 restart all` or shared process commands on a multi-project VPS.
 
 ### 6. Data Migration
 
