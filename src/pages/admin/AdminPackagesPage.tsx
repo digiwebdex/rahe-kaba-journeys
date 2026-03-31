@@ -2,16 +2,21 @@ import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/api";
 import { toast } from "sonner";
-import { Plus, X, Edit2, Trash2, Save, ToggleLeft, ToggleRight, Upload, Loader2, Eye, Copy } from "lucide-react";
+import { Plus, X, Edit2, Trash2, Save, ToggleLeft, ToggleRight, Upload, Loader2, Eye, Copy, Check, ArrowRight, Clock, Star, Plane } from "lucide-react";
 import { useIsViewer } from "@/components/admin/AdminLayout";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AdminActionMenu from "@/components/admin/AdminActionMenu";
+
+import heroImage from "@/assets/hero-kaaba-golden.jpg";
+import medinaImage from "@/assets/hero-medina.jpg";
+
+const previewFallbackImages = [heroImage, medinaImage];
 
 const inputClass = "w-full bg-secondary border border-border rounded-md px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40";
 const TYPES = ["hajj", "umrah", "tour", "visa", "air_ticket", "hotel", "transport", "ziyara"];
 
 const EMPTY_FORM = {
-  name: "", type: "umrah", description: "", price: "", duration_days: "",
+  name: "", type: "umrah", description: "", price: "", duration_days: "", features: "",
   image_url: "", start_date: "", expiry_date: "", services: "", is_active: true,
   status: "active", show_on_website: true,
 };
@@ -70,6 +75,7 @@ export default function AdminPackagesPage() {
     image_url: f.image_url || null, start_date: f.start_date || null,
     expiry_date: f.expiry_date || null,
     services: f.services ? f.services.split(",").map(s => s.trim()).filter(Boolean) : [],
+    features: f.features ? f.features.split("\n").map(s => s.trim()).filter(Boolean) : [],
     is_active: f.status === "active",
     status: f.status,
     show_on_website: f.show_on_website,
@@ -88,10 +94,11 @@ export default function AdminPackagesPage() {
   const openEdit = (p: any) => {
     setEditingId(p.id);
     const svc = Array.isArray(p.services) ? p.services.join(", ") : "";
+    const feat = Array.isArray(p.features) ? p.features.join("\n") : "";
     setForm({
       name: p.name, type: p.type, description: p.description || "", price: String(p.price),
       duration_days: p.duration_days ? String(p.duration_days) : "", image_url: p.image_url || "",
-      start_date: p.start_date || "", expiry_date: p.expiry_date || "", services: svc, is_active: p.is_active,
+      start_date: p.start_date || "", expiry_date: p.expiry_date || "", services: svc, features: feat, is_active: p.is_active,
       status: p.status || (p.is_active ? "active" : "inactive"),
       show_on_website: p.show_on_website !== false,
     });
@@ -148,6 +155,66 @@ export default function AdminPackagesPage() {
   };
   const pageTitle = urlType && TYPE_DISPLAY[urlType] ? `${TYPE_DISPLAY[urlType]} Management` : "Package Management";
 
+  const previewFeatures = form.features ? form.features.split("\n").map(s => s.trim()).filter(Boolean) : [];
+  const previewImage = form.image_url || previewFallbackImages[0];
+
+  const renderLivePreview = () => (
+    <div className="sticky top-0">
+      <label className="text-xs text-muted-foreground block mb-2 font-medium">Live Preview</label>
+      <div className="rounded-2xl overflow-hidden bg-card border border-border flex flex-col shadow-lg max-w-[320px]">
+        <div className="relative h-48 overflow-hidden">
+          <img src={previewImage} alt={form.name || "Package"} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute top-3 left-3">
+            <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-full capitalize shadow-md">
+              {form.type || "umrah"}
+            </span>
+          </div>
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
+            <Star className="h-3 w-3 fill-primary text-primary" />
+            <span className="text-xs font-bold text-foreground">4.9</span>
+          </div>
+          <div className="absolute bottom-3 left-3">
+            <p className="text-2xl font-heading font-bold text-white drop-shadow-lg">
+              ৳{form.price ? Number(form.price).toLocaleString() : "0"}
+            </p>
+            <p className="text-xs text-white/80">/ জন</p>
+          </div>
+        </div>
+        <div className="p-4 flex-1 flex flex-col">
+          <h3 className="font-heading text-lg font-bold mb-1.5">{form.name || "Package Name"}</h3>
+          <div className="flex items-center gap-3 mb-2 text-xs text-muted-foreground">
+            {form.duration_days && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {form.duration_days} দিন
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Plane className="h-3.5 w-3.5" />
+              ভিসা
+            </span>
+          </div>
+          {form.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{form.description}</p>
+          )}
+          {previewFeatures.length > 0 && (
+            <ul className="space-y-1.5 mb-4 flex-1">
+              {previewFeatures.slice(0, 6).map((f, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" /> {f}
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="w-full py-2.5 rounded-xl text-sm font-semibold text-center inline-flex items-center justify-center gap-2 bg-gradient-gold text-primary-foreground mt-auto">
+            বুক করুন <ArrowRight className="h-4 w-4" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderForm = () => (
     <form onSubmit={editingId ? handleSave : handleCreate} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -186,6 +253,11 @@ export default function AdminPackagesPage() {
           <label className="text-xs text-muted-foreground block mb-1">Services (comma-separated)</label>
           <input className={inputClass} placeholder="Visa, Hotel, Transport, Food, Guide"
             value={form.services} onChange={(e) => setForm({ ...form, services: e.target.value })} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-xs text-muted-foreground block mb-1">Features (one per line — shown as ✓ checklist on card)</label>
+          <textarea className={`${inputClass} resize-none`} placeholder={"5-star hotel near Haram\n5-star hotel in Madinah\nVIP transport\nFull Ziyara tours"}
+            rows={4} value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} />
         </div>
         <div className="sm:col-span-2">
           <label className="text-xs text-muted-foreground block mb-1">Description</label>
@@ -324,11 +396,14 @@ export default function AdminPackagesPage() {
 
       {/* Create/Edit Modal */}
       <Dialog open={showForm} onOpenChange={(o) => { if (!o) closeModal(); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">{editingId ? "Edit Package" : "Create New Package"}</DialogTitle>
           </DialogHeader>
-          {renderForm()}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
+            <div>{renderForm()}</div>
+            <div className="hidden lg:block">{renderLivePreview()}</div>
+          </div>
         </DialogContent>
       </Dialog>
 
