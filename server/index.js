@@ -136,7 +136,7 @@ const createCrudRoutes = (tableName, options = {}) => {
         }
 
         const keys = entries.map(([key]) => key);
-        const values = entries.map(([, value]) => value);
+        const values = entries.map(([, value]) => (typeof value === 'object' && value !== null) ? JSON.stringify(value) : value);
         const placeholders = keys.map((_, i) => `$${i + 1}`);
         const sql = `INSERT INTO "${tableName}" (${keys.map(quote).join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING *`;
         console.log(`INSERT into ${tableName}:`, { sql, values, keys });
@@ -163,7 +163,7 @@ const createCrudRoutes = (tableName, options = {}) => {
       }
 
       const keys = entries.map(([key]) => key);
-      const values = entries.map(([, value]) => value);
+      const values = entries.map(([, value]) => (typeof value === 'object' && value !== null) ? JSON.stringify(value) : value);
       const sets = keys.map((key, i) => `${quote(key)} = $${i + 1}`);
       values.push(req.params.id);
 
