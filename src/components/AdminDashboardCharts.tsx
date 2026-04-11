@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  TrendingUp, DollarSign, Package,
-  Users, Wallet, ArrowUpRight, ArrowDownRight, UserCheck,
-  CalendarDays, CreditCard,
+  TrendingUp, DollarSign,
+  Users, Wallet, ArrowUpRight, UserCheck,
+  CalendarDays, CreditCard, Zap,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -41,8 +41,9 @@ const AdminDashboardCharts = ({
   const [showDueCustomers, setShowDueCustomers] = useState(false);
 
   const financials = useMemo(() => {
-    const totalSales = bookings.reduce((s, b) => s + Number(b.total_amount || 0), 0);
-    const totalHajji = bookings.reduce((s, b) => s + Number(b.num_travelers || 0), 0);
+    const activeBookings = bookings.filter(b => b.status !== "cancelled");
+    const totalSales = activeBookings.reduce((s, b) => s + Number(b.total_amount || 0), 0);
+    const totalHajji = activeBookings.reduce((s, b) => s + Number(b.num_travelers || 0), 0);
 
     const customerPaymentsIn = payments
       .filter(p => p.status === "completed")
@@ -53,7 +54,14 @@ const AdminDashboardCharts = ({
       .reduce((s, e) => s + Number(e.amount || 0), 0);
     const totalIncomeReceived = customerPaymentsIn + moallemDepositsIn + cashbookIncome;
 
-    const bookingProfit = bookings.reduce((s, b) => {
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const todayIncome = payments
+      .filter(p => p.status === "completed" && p.paid_at?.startsWith(todayStr))
+      .reduce((s, p) => s + Number(p.amount || 0), 0)
+      + moallemPayments.filter(p => p.date?.startsWith(todayStr)).reduce((s, p) => s + Number(p.amount || 0), 0)
+      + dailyCashbook.filter(e => e.type === "income" && e.date?.startsWith(todayStr)).reduce((s, e) => s + Number(e.amount || 0), 0);
+
+    const bookingProfit = activeBookings.reduce((s, b) => {
       const selling = Number(b.total_amount || 0);
       const cost = Number(b.total_cost || 0);
       const commission = Number(b.total_commission || 0);
@@ -68,25 +76,26 @@ const AdminDashboardCharts = ({
     const walletAccounts = accounts.filter(a => a.type === "asset");
     const cashBalance = walletAccounts.reduce((s, a) => s + Number(a.balance || 0), 0);
 
-    const moallemDue = moallems.reduce((s, m) => s + Number(m.total_due || 0), 0);
-    const customerDue = bookings.reduce((s, b) => s + Number(b.due_amount || 0), 0);
-    const totalReceivable = moallemDue + customerDue;
+    const customerDue = activeBookings.reduce((s, b) => s + Number(b.due_amount || 0), 0);
+    const dueCustomerCount = new Set(
+      activeBookings.filter(b => Number(b.due_amount || 0) > 0).map(b => b.guest_phone || b.guest_name || b.tracking_id)
+    ).size;
 
-    const bookingSupplierDue = bookings.reduce((s, b) => s + Number(b.supplier_due || 0), 0);
-    const contractSupplierDue = supplierContracts.reduce((s, c) => s + Number(c.total_due || 0), 0);
-    const supplierDue = bookingSupplierDue + contractSupplierDue;
-    const commissionDue = bookings.reduce((s, b) => s + Number(b.commission_due || 0), 0);
-    const totalPayable = supplierDue + commissionDue;
+    const todayBookings = bookings.filter(b => b.created_at?.startsWith(todayStr)).length;
+    const pendingCount = bookings.filter(b => b.status === "pending").length;
+    const confirmedCount = bookings.filter(b => b.status === "confirmed").length;
+    const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
 
     return {
-      totalSales, totalHajji, totalIncomeReceived, netProfit, cashBalance,
-      moallemDue, customerDue, totalReceivable, supplierDue, commissionDue, totalPayable,
+      totalSales, totalHajji, totalIncomeReceived, todayIncome, netProfit, cashBalance,
+      customerDue, dueCustomerCount, walletAccounts,
+      todayBookings, pendingCount, confirmedCount, cancelledCount,
     };
   }, [bookings, payments, expenses, accounts, moallemPayments, supplierPayments, commissionPayments, supplierContractPayments, supplierContracts, moallems, dailyCashbook]);
 
   const dueCustomers = useMemo(() => {
     const map: Record<string, { name: string; phone: string; totalDue: number; totalAmount: number; bookingCount: number; bookings: any[] }> = {};
-    bookings.filter(b => Number(b.due_amount || 0) > 0).forEach(b => {
+    bookings.filter(b => b.status !== "cancelled" && Number(b.due_amount || 0) > 0).forEach(b => {
       const key = b.guest_phone || b.guest_name || b.tracking_id;
       if (!map[key]) {
         map[key] = { name: b.guest_name || "N/A", phone: b.guest_phone || "", totalDue: 0, totalAmount: 0, bookingCount: 0, bookings: [] };
@@ -99,103 +108,187 @@ const AdminDashboardCharts = ({
     return Object.values(map).sort((a, b) => b.totalDue - a.totalDue);
   }, [bookings]);
 
-  const kpiCards = useMemo(() => {
-    const cards: { label: string; value: string | number; icon: any; color: string; onClick: () => void }[] = [
-      { label: "Total Sales", value: fmt(financials.totalSales), icon: DollarSign, color: "text-primary", onClick: () => navigate("/admin/bookings") },
-      { label: "Income Received", value: fmt(financials.totalIncomeReceived), icon: ArrowUpRight, color: "text-emerald-500", onClick: () => navigate("/admin/payments") },
-    ];
-    if (canSeeProfit) {
-      cards.push({ label: "Net Profit", value: fmt(financials.netProfit), icon: TrendingUp, color: financials.netProfit >= 0 ? "text-emerald-500" : "text-destructive", onClick: () => navigate("/admin/accounting") });
-    }
-    cards.push(
-      { label: "Cash Balance", value: fmt(financials.cashBalance), icon: Wallet, color: financials.cashBalance >= 0 ? "text-primary" : "text-destructive", onClick: () => navigate("/admin/accounting") },
-      { label: "Total Bookings", value: bookings.length, icon: Package, color: "text-foreground", onClick: () => navigate("/admin/bookings") },
-      { label: "Total Hajji", value: financials.totalHajji, icon: Users, color: "text-foreground", onClick: () => navigate("/admin/customers") },
-      { label: "Customer Due", value: fmt(financials.customerDue), icon: UserCheck, color: financials.customerDue > 0 ? "text-yellow-500" : "text-emerald-500", onClick: () => setShowDueCustomers(true) },
-    );
-    return cards;
-  }, [financials, bookings.length, canSeeProfit, navigate]);
-
   const recentBookings = bookings.slice(0, 5);
   const recentPayments = payments.filter(p => p.status === "completed").slice(0, 5);
 
+  // Wallet data
+  const walletAccounts = financials.walletAccounts;
+  const walletTotal = walletAccounts.reduce((s, a) => s + Number(a.balance || 0), 0);
+  const walletColors: Record<string, string> = {
+    cash: "bg-emerald-500", bank: "bg-blue-500", bkash: "bg-pink-500", nagad: "bg-orange-500",
+  };
+  const walletDots: Record<string, string> = {
+    cash: "bg-emerald-500", bank: "bg-blue-500", bkash: "bg-pink-500", nagad: "bg-orange-500",
+  };
+
   return (
     <div className="space-y-5">
-      {/* ═══ KPI CARDS ═══ */}
-      <div className={`grid grid-cols-2 sm:grid-cols-4 ${canSeeProfit ? "lg:grid-cols-7" : "lg:grid-cols-6"} gap-3`}>
-        {kpiCards.map(k => (
-          <div
-            key={k.label}
-            className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-colors"
-            onClick={k.onClick}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{k.label}</p>
-              <k.icon className={`h-4 w-4 ${k.color}`} />
+      {/* ═══ TOP KPI CARDS ═══ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Total Sales */}
+        <div
+          className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => navigate("/admin/bookings")}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <DollarSign className="h-4 w-4 text-primary" />
             </div>
-            <p className={`text-lg font-body font-bold tabular-nums ${k.color}`}>{k.value}</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Total Sales</p>
           </div>
-        ))}
+          <p className="text-xl font-bold text-primary tabular-nums">{fmt(financials.totalSales)}</p>
+          <p className="text-[11px] text-muted-foreground mt-1">{bookings.filter(b => b.status !== "cancelled").length} bookings</p>
+        </div>
+
+        {/* Income Received */}
+        <div
+          className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => navigate("/admin/payments")}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+            </div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Income Received</p>
+          </div>
+          <p className="text-xl font-bold text-foreground tabular-nums">{fmt(financials.totalIncomeReceived)}</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Today: {fmt(financials.todayIncome)}</p>
+        </div>
+
+        {/* Net Profit */}
+        <div
+          className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => navigate("/admin/accounting")}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-foreground" />
+            </div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Net Profit</p>
+          </div>
+          <p className={`text-xl font-bold tabular-nums ${financials.netProfit >= 0 ? "text-foreground" : "text-destructive"}`}>
+            {fmt(financials.netProfit)}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1">After all expenses</p>
+        </div>
+
+        {/* Customer Due */}
+        <div
+          className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => setShowDueCustomers(true)}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+              <UserCheck className="h-4 w-4 text-orange-500" />
+            </div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Customer Due</p>
+          </div>
+          <p className={`text-xl font-bold tabular-nums ${financials.customerDue > 0 ? "text-destructive" : "text-emerald-500"}`}>
+            {fmt(financials.customerDue)}
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-1">{financials.dueCustomerCount} customers</p>
+        </div>
       </div>
 
-      {/* ═══ RECEIVABLE & PAYABLE ═══ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-            <ArrowUpRight className="h-4 w-4 text-primary" /> Receivable
-          </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between cursor-pointer hover:bg-secondary/30 rounded px-1 -mx-1 py-0.5 transition-colors" onClick={() => navigate("/admin/moallems")}>
-              <span className="text-muted-foreground">Moallem Due</span><span className="font-bold text-yellow-600">{fmt(financials.moallemDue)}</span>
-            </div>
-            <div className="flex justify-between cursor-pointer hover:bg-secondary/30 rounded px-1 -mx-1 py-0.5 transition-colors" onClick={() => setShowDueCustomers(true)}>
-              <span className="text-muted-foreground">Customer Due</span><span className="font-bold text-yellow-600">{fmt(financials.customerDue)}</span>
-            </div>
-            <div className="border-t border-border pt-2 flex justify-between font-bold"><span>Total</span><span className="text-primary">{fmt(financials.totalReceivable)}</span></div>
+      {/* ═══ WALLET OVERVIEW + QUICK STATS ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Wallet Overview - 3 cols */}
+        <div className="lg:col-span-3 bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-primary" /> Wallet Overview
+            </h3>
+            <span className={`text-lg font-bold tabular-nums ${walletTotal >= 0 ? "text-primary" : "text-destructive"}`}>
+              {fmt(walletTotal)}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+            {["cash", "bank", "bkash", "nagad"].map(name => {
+              const acc = walletAccounts.find(a => a.name.toLowerCase().includes(name));
+              const bal = acc ? Number(acc.balance || 0) : 0;
+              return (
+                <div key={name} className="flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${walletDots[name] || "bg-muted"}`} />
+                  <div>
+                    <p className="text-xs text-muted-foreground capitalize">{name === "bkash" ? "bKash" : name.charAt(0).toUpperCase() + name.slice(1)}</p>
+                    <p className="text-sm font-bold tabular-nums">{fmt(bal)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Progress bar */}
+          <div className="h-2.5 rounded-full bg-secondary overflow-hidden flex">
+            {walletTotal > 0 && ["cash", "bank", "bkash", "nagad"].map(name => {
+              const acc = walletAccounts.find(a => a.name.toLowerCase().includes(name));
+              const bal = acc ? Number(acc.balance || 0) : 0;
+              const pct = walletTotal > 0 ? (bal / walletTotal) * 100 : 0;
+              if (pct <= 0) return null;
+              return (
+                <div
+                  key={name}
+                  className={`h-full ${walletColors[name] || "bg-muted"}`}
+                  style={{ width: `${pct}%` }}
+                />
+              );
+            })}
           </div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-            <ArrowDownRight className="h-4 w-4 text-destructive" /> Payable
+
+        {/* Quick Stats - 1 col */}
+        <div className="bg-card border border-border rounded-xl p-5">
+          <h3 className="text-sm font-semibold flex items-center gap-2 mb-4">
+            <Zap className="h-4 w-4 text-yellow-500" /> Quick Stats
           </h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between cursor-pointer hover:bg-secondary/30 rounded px-1 -mx-1 py-0.5 transition-colors" onClick={() => navigate("/admin/supplier-agents")}>
-              <span className="text-muted-foreground">Supplier Due</span><span className="font-bold text-destructive">{fmt(financials.supplierDue)}</span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total Hajji</span>
+              <span className="text-sm font-bold text-primary">{financials.totalHajji}</span>
             </div>
-            {canSeeProfit && (
-              <div className="flex justify-between cursor-pointer hover:bg-secondary/30 rounded px-1 -mx-1 py-0.5 transition-colors" onClick={() => navigate("/admin/moallems")}>
-                <span className="text-muted-foreground">Commission Due</span><span className="font-bold text-destructive">{fmt(financials.commissionDue)}</span>
-              </div>
-            )}
-            <div className="border-t border-border pt-2 flex justify-between font-bold">
-              <span>Total</span>
-              <span className="text-destructive">{fmt(financials.supplierDue + (canSeeProfit ? financials.commissionDue : 0))}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Today's Bookings</span>
+              <span className="text-sm font-bold text-primary">{financials.todayBookings}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Pending</span>
+              <span className="text-sm font-bold text-yellow-500">{financials.pendingCount}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Confirmed</span>
+              <span className="text-sm font-bold text-foreground">{financials.confirmedCount}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Cancelled</span>
+              <span className="text-sm font-bold text-destructive">{financials.cancelledCount}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ═══ RECENT BOOKINGS & PAYMENTS ═══ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Recent Bookings */}
         <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-primary" /> Recent Bookings
             </h3>
-            <span className="text-xs text-primary cursor-pointer hover:underline" onClick={() => navigate("/admin/bookings")}>View All</span>
+            <span className="text-xs text-primary cursor-pointer hover:underline" onClick={() => navigate("/admin/bookings")}>View All →</span>
           </div>
           {recentBookings.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {recentBookings.map(b => (
                 <div
                   key={b.id}
-                  className="flex items-center justify-between py-2 border-b border-border last:border-0 cursor-pointer hover:bg-secondary/20 rounded px-1 -mx-1 transition-colors"
+                  className="flex items-center justify-between py-2.5 border-b border-border last:border-0 cursor-pointer hover:bg-secondary/20 rounded px-2 -mx-1 transition-colors"
                   onClick={() => navigate("/admin/bookings")}
                 >
                   <div>
                     <p className="text-sm font-semibold">{b.guest_name || "N/A"}</p>
-                    <p className="text-[11px] text-muted-foreground">{b.tracking_id} · {b.packages?.name || ""}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {b.tracking_id} · {b.packages?.name || ""} {b.packages?.type ? b.packages.type.toUpperCase() : ""}{" "}
+                      {b.created_at ? format(new Date(b.created_at), "dd-MM-yy") : ""}
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold text-primary">{fmt(Number(b.total_amount || 0))}</p>
@@ -219,14 +312,14 @@ const AdminDashboardCharts = ({
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-emerald-500" /> Recent Payments
             </h3>
-            <span className="text-xs text-primary cursor-pointer hover:underline" onClick={() => navigate("/admin/payments")}>View All</span>
+            <span className="text-xs text-primary cursor-pointer hover:underline" onClick={() => navigate("/admin/payments")}>View All →</span>
           </div>
           {recentPayments.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {recentPayments.map(p => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between py-2 border-b border-border last:border-0 cursor-pointer hover:bg-secondary/20 rounded px-1 -mx-1 transition-colors"
+                  className="flex items-center justify-between py-2.5 border-b border-border last:border-0 cursor-pointer hover:bg-secondary/20 rounded px-2 -mx-1 transition-colors"
                   onClick={() => navigate("/admin/payments")}
                 >
                   <div>
@@ -234,7 +327,7 @@ const AdminDashboardCharts = ({
                     <p className="text-[11px] text-muted-foreground">#{p.installment_number || 1} · {p.payment_method || "cash"}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-emerald-500">{fmt(Number(p.amount || 0))}</p>
+                    <p className="text-sm font-bold text-emerald-600">{fmt(Number(p.amount || 0))}</p>
                     <p className="text-[10px] text-muted-foreground">{p.paid_at ? format(new Date(p.paid_at), "dd MMM yy") : ""}</p>
                   </div>
                 </div>
