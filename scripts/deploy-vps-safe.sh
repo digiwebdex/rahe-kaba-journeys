@@ -25,6 +25,16 @@ else
   pm2 start "$ECOSYSTEM_FILE" --only "$APP_NAME" --update-env
 fi
 
+echo "[health-check] Waiting for API to respond..."
+for i in $(seq 1 30); do
+  if curl -fsS http://127.0.0.1:3001/api/health >/dev/null; then
+    break
+  fi
+  sleep 2
+done
+
+curl -fsS http://127.0.0.1:3001/api/health >/dev/null
+
 echo "[6/6] Saving PM2 process list..."
 pm2 save
 
