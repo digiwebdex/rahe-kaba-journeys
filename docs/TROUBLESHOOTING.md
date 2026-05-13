@@ -51,13 +51,32 @@ localStorage.removeItem('rk_language');
 
 ### Login not working
 
-**Cause:** JWT token expired or server/.env misconfigured
+**Cause:** JWT token expired, `server/.env` misconfigured, or the VPS API process is down (this also breaks packages/CMS/public API calls)
 
 **Fix:**
 1. Check server: `pm2 status`
 2. Check logs: `pm2 logs rahekaba-api --lines 50`
 3. Verify `server/.env` has correct `JWT_SECRET` and `DATABASE_URL`
-4. Restart only this project: `pm2 restart rahekaba-api --update-env`
+4. Confirm health endpoint: `curl http://127.0.0.1:3001/api/health`
+5. Restart only this project: `pm2 restart rahekaba-api --update-env`
+
+### Packages missing on front page + admin login failing together
+
+**Cause:** This is usually not a frontend bug. Both depend on the same VPS API. If `/api/packages`, `/api/site-content`, and `/api/auth/login` all fail together, Nginx will return `502 Bad Gateway` because the Node.js API is stopped, crashing, or cannot reach PostgreSQL.
+
+**Fix:**
+```bash
+pm2 status
+pm2 logs rahekaba-api --lines 100
+curl http://127.0.0.1:3001/api/health
+bash ./scripts/deploy-vps-safe.sh
+```
+
+If health still fails, verify `server/.env` and database connectivity:
+
+```bash
+psql -U digiwebdex -d rahekaba -p 5433 -h 127.0.0.1 -c "SELECT 1;"
+```
 
 ### CMS content not showing
 
