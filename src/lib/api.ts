@@ -3,6 +3,35 @@
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+async function parseApiBody(res: Response) {
+  const raw = await res.text();
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {
+      error: res.status >= 500
+        ? 'API server is unavailable. Please restart the VPS API service.'
+        : 'Unexpected response from API server.',
+      raw,
+    };
+  }
+}
+
+function getApiErrorMessage(res: Response, body: any) {
+  if (body && typeof body === 'object') {
+    if (typeof body.error === 'string' && body.error.trim()) return body.error;
+    if (typeof body.message === 'string' && body.message.trim()) return body.message;
+  }
+
+  if ([502, 503, 504].includes(res.status)) {
+    return 'API server is unavailable. Please restart the VPS API service.';
+  }
+
+  return `Request failed with status ${res.status}`;
+}
+
 // Token management
 class TokenManager {
   private static ACCESS_KEY = 'rk_access_token';
@@ -89,8 +118,8 @@ export const auth = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    const data = await res.json();
-    if (!res.ok) return { data: null, error: { message: data.error } };
+    const data = await parseApiBody(res);
+    if (!res.ok) return { data: null, error: { message: getApiErrorMessage(res, data) } };
     TokenManager.setTokens(data.access_token, data.refresh_token);
     TokenManager.setUser({ ...data.user, roles: data.roles || [] });
     return { data: { user: { id: data.user.id, email: data.user.email, ...data.user, roles: data.roles || [] }, session: { access_token: data.access_token } }, error: null };
@@ -101,8 +130,8 @@ export const auth = {
       method: 'POST',
       body: JSON.stringify({ email, password, full_name: options?.data?.full_name, phone: options?.data?.phone }),
     });
-    const data = await res.json();
-    if (!res.ok) return { data: null, error: { message: data.error } };
+    const data = await parseApiBody(res);
+    if (!res.ok) return { data: null, error: { message: getApiErrorMessage(res, data) } };
     return { data: {}, error: null };
   },
 
@@ -145,8 +174,8 @@ export const auth = {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
-    const data = await res.json();
-    if (!res.ok) return { error: { message: data.error } };
+    const data = await parseApiBody(res);
+    if (!res.ok) return { error: { message: getApiErrorMessage(res, data) } };
     return { error: null };
   },
 
@@ -155,8 +184,8 @@ export const auth = {
       method: 'POST',
       body: JSON.stringify({ token: new URLSearchParams(window.location.search).get('token'), password }),
     });
-    const data = await res.json();
-    if (!res.ok) return { error: { message: data.error } };
+    const data = await parseApiBody(res);
+    if (!res.ok) return { error: { message: getApiErrorMessage(res, data) } };
     return { data: {}, error: null };
   },
 
