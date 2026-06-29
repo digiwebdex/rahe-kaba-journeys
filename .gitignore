@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Server runtime (VPS production)
+server/.env
+server/backups/
+server/uploads/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
